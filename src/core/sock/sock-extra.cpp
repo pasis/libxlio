@@ -379,10 +379,12 @@ extern "C" int xlio_socket_fd(xlio_socket_t sock)
 
 extern "C" xlio_socket_t xlio_fd_socket(int fd)
 {
-    return reinterpret_cast<xlio_socket_t>(dynamic_cast<sockinfo_tcp *>(fd_collection_get_sockfd(fd)));
+    return reinterpret_cast<xlio_socket_t>(
+        dynamic_cast<sockinfo_tcp *>(fd_collection_get_sockfd(fd)));
 }
 
-extern "C" int xlio_io_key_create(xlio_socket_t sock, const struct xlio_io_key_attr *attr, xlio_io_key_t *out)
+extern "C" int xlio_io_key_create(xlio_socket_t sock, const struct xlio_io_key_attr *attr,
+                                  xlio_io_key_t *out)
 {
     return -1;
 }
@@ -396,15 +398,16 @@ extern "C" int xlio_io_key_destroy(xlio_socket_t sock, xlio_io_key_t key)
     return -1;
 }
 
-extern "C" int xlio_io_send(xlio_socket_t sock, const void *data, size_t len, const struct xlio_io_attr *attr)
+extern "C" int xlio_io_send(xlio_socket_t sock, const void *data, size_t len,
+                            const struct xlio_io_attr *attr)
 {
     /*
      * xlio_io_attr:
      *  1. flags: MSG_MORE, CRYPTO, INLINE
      *  2. mkey -- can we provide cheap abstraction for bonding?
      *  3. xlio_io_key_t(uintptr_t or uint32_t) key
-     *  4. PDU boundaries -- need to understand payload offset and payload size, CRC may be offloaded or provided by user
-     *                       need interface to avoid mistakes when no offloads are used
+     *  4. PDU boundaries -- need to understand payload offset and payload size, CRC may be
+     * offloaded or provided by user. Need interface to avoid mistakes when no offloads are used
      *  5. opaque
      */
 
@@ -413,14 +416,16 @@ extern "C" int xlio_io_send(xlio_socket_t sock, const void *data, size_t len, co
      *  1. each send/sendv is a complete single PDU
      *  2. each send/sendv is part of a single PDU
      */
-    struct iovec iov[1] = { .iov_base = data, .iov_len = len };
+    struct iovec iov[1] = {.iov_base = data, .iov_len = len};
     return xlio_io_sendv(sock, &iov, 1, attr);
 }
 
-extern "C" int xlio_io_sendv(xlio_socket_t sock, const struct iovec *iov, unsigned iovcnt, const struct xlio_io_attr *attr)
+extern "C" int xlio_io_sendv(xlio_socket_t sock, const struct iovec *iov, unsigned iovcnt,
+                             const struct xlio_io_attr *attr)
 {
     sockinfo_tcp *si = reinterpret_cast<sockinfo_tcp *>(sock);
-    return si->tcp_tx_express(iov, iovcnt, attr->mkey, attr->flags, static_cast<void *>(attr->userdata));
+    return si->tcp_tx_express(iov, iovcnt, attr->mkey, attr->flags,
+                              static_cast<void *>(attr->userdata));
 }
 
 extern "C" void xlio_io_flush(xlio_socket_t sock)

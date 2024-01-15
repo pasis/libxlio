@@ -680,9 +680,9 @@ xlio_socket_t xlio_fd_socket(int fd); /* XXX Temporary API. */
 int xlio_io_key_create(xlio_socket_t sock, const struct xlio_io_key_attr *attr, xlio_io_key_t *out);
 int xlio_io_key_destroy(xlio_socket_t sock, xlio_io_key_t key);
 int xlio_io_send(xlio_socket_t sock, const void *data, size_t len, const struct xlio_io_attr *attr);
-int xlio_io_sendv(xlio_socket_t sock, const struct iovec *iov, unsigned iovcnt, const struct xlio_io_attr *attr);
+int xlio_io_sendv(xlio_socket_t sock, const struct iovec *iov, unsigned iovcnt,
+                  const struct xlio_io_attr *attr);
 void xlio_io_flush(xlio_socket_t sock);
-
 }
 
 #endif /* XLIO_EXTRA_H */
