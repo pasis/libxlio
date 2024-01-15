@@ -641,12 +641,48 @@ static inline struct xlio_api_t *xlio_get_api()
     return api_ptr;
 }
 
-enum xlio_express_flags : uint32_t {
-    XLIO_EXPRESS_OP_TYPE_DESC,
-    XLIO_EXPRESS_OP_TYPE_FILE_ZEROCOPY,
-    XLIO_EXPRESS_OP_TYPE_MASK = 0x000fu,
-    XLIO_EXPRESS_MSG_MORE,
-    XLIO_EXPRESS_MSG_MASK = 0x00f0u,
+extern "C" {
+
+typedef void *xlio_socket_t;
+typedef uint32_t xlio_io_key_t;
+
+#define XLIO_EXTRA_ATTR_SOCKETXTREME 0x1
+#define XLIO_EXTRA_ATTR_IO_API       0x2
+struct xlio_extra_attr {
+    unsigned long flags;
 };
+
+struct xlio_socket_attr {
+    int unused;
+};
+
+struct xlio_io_key_attr {
+    int unused;
+};
+
+#define XLIO_IO_FLAG_MSG_MORE 0x1
+#define XLIO_IO_FLAG_CRYPTO   0x2
+#define XLIO_IO_FLAG_INLINE   0x4
+struct xlio_io_attr {
+    unsigned flags;
+    uint32_t mkey;
+    xlio_io_key_t key;
+    uintptr_t userdata;
+};
+
+int xlio_extra_init(const struct xlio_extra_attr *attr);
+void xlio_extra_destroy();
+void xlio_socket_attr_init(const struct xlio_socket_attr *attr);
+int xlio_socket_create(const struct xlio_socket_attr *attr, xlio_socket_t *out);
+int xlio_socket_destroy(xlio_socket_t sock);
+int xlio_socket_fd(xlio_socket_t sock);
+xlio_socket_t xlio_fd_socket(int fd); /* XXX Temporary API. */
+int xlio_io_key_create(xlio_socket_t sock, const struct xlio_io_key_attr *attr, xlio_io_key_t *out);
+int xlio_io_key_destroy(xlio_socket_t sock, xlio_io_key_t key);
+int xlio_io_send(xlio_socket_t sock, const void *data, size_t len, const struct xlio_io_attr *attr);
+int xlio_io_sendv(xlio_socket_t sock, const struct iovec *iov, unsigned iovcnt, const struct xlio_io_attr *attr);
+void xlio_io_flush(xlio_socket_t sock);
+
+}
 
 #endif /* XLIO_EXTRA_H */

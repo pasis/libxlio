@@ -6049,17 +6049,9 @@ int sockinfo_tcp::tcp_tx_express(const struct iovec *iov, unsigned iov_len, uint
         return -1;
     }
 
-    switch (flags & XLIO_EXPRESS_OP_TYPE_MASK) {
-    case XLIO_EXPRESS_OP_TYPE_DESC:
-        mdesc.attr = PBUF_DESC_EXPRESS;
-        break;
-    case XLIO_EXPRESS_OP_TYPE_FILE_ZEROCOPY:
-        mdesc.attr = PBUF_DESC_MDESC;
-        break;
-    default:
-        return -1;
-    };
+    mdesc.attr = (flags & XLIO_EXPRESS_FLAG_MDESC) ? PBUF_DESC_MDESC : PBUF_DESC_EXPRESS;
     mdesc.mkey = mkey;
+    /* XXX TODO opaque in express API must be set in the last pbuf only including splits. This is POC approach, in the future we need a better way, probably an object per PDU. */
     mdesc.opaque = opaque_op;
 
     int bytes_written = 0;
@@ -6075,7 +6067,7 @@ int sockinfo_tcp::tcp_tx_express(const struct iovec *iov, unsigned iov_len, uint
         bytes_written += iov[i].iov_len;
     }
 
-    if (!(flags & XLIO_EXPRESS_MSG_MORE)) {
+    if (!(flags & XLIO_EXPRESS_FLAG_MSG_MORE)) {
         err = tcp_output(&m_pcb);
         if (err != ERR_OK) {
             /* The error very likely to be recoverable */

@@ -89,6 +89,11 @@ enum tcp_conn_state_e {
     TCP_CONN_RESETED
 };
 
+enum xlio_express_flags : uint32_t {
+    XLIO_EXPRESS_FLAG_MSG_MORE = XLIO_IO_FLAG_MSG_MORE,
+    XLIO_EXPRESS_FLAG_MDESC = 1U << 8,
+};
+
 struct socket_option_t {
     const int level;
     const int optname;
@@ -340,6 +345,13 @@ public:
 
     int tcp_tx_express(const struct iovec *iov, unsigned iov_len, uint32_t mkey,
                        xlio_express_flags flags, void *opaque_op);
+
+    inline void flush()
+    {
+        lock_tcp_con();
+        tcp_output(&m_pcb);
+        unlock_tcp_con();
+    }
 
 protected:
     virtual void lock_rx_q();
