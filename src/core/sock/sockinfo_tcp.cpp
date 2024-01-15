@@ -750,7 +750,8 @@ bool sockinfo_tcp::prepare_dst_to_send(bool is_accepted_socket /* = false */)
     bool ret_val = false;
 
     if (m_p_connected_dst_entry) {
-        bool skip_rules = is_accepted_socket, is_connect = !is_accepted_socket;
+        bool skip_rules = is_accepted_socket;
+        bool is_connect = !is_accepted_socket;
         ret_val = m_p_connected_dst_entry->prepare_to_send(m_so_ratelimit, skip_rules, is_connect);
         if (ret_val) {
             /* dst_entry has resolved tx ring,
@@ -4119,7 +4120,7 @@ void sockinfo_tcp::fit_snd_bufs(unsigned int new_max_snd_buff)
     m_pcb.snd_buf += (new_max_snd_buff - m_pcb.max_snd_buff);
     m_pcb.max_snd_buff = new_max_snd_buff;
 
-    auto mss = m_pcb.mss ?: 536;
+    uint16_t mss = m_pcb.mss ?: 536;
     m_pcb.max_unsent_len = (mss - 1 + m_pcb.max_snd_buff * 16) / mss;
 }
 
@@ -6028,23 +6029,6 @@ inline bool sockinfo_tcp::handle_bind_no_port(int &bind_ret, in_port_t in_port,
 int sockinfo_tcp::tcp_tx_express(const struct iovec *iov, unsigned iov_len, uint32_t mkey,
                                  xlio_express_flags flags, void *opaque_op)
 {
-    if (unlikely(!is_rts())) {
-        if (m_conn_state == TCP_CONN_TIMEOUT) {
-            si_tcp_logdbg("TX timed out");
-            errno = ETIMEDOUT;
-        } else if (m_conn_state == TCP_CONN_RESETED) {
-            si_tcp_logdbg("TX on reseted socket");
-            errno = ECONNRESET;
-        } else if (m_conn_state == TCP_CONN_ERROR) {
-            si_tcp_logdbg("TX on connection failed socket");
-            errno = ECONNREFUSED;
-        } else {
-            si_tcp_logdbg("TX on disconnected socket");
-            errno = EPIPE;
-        }
-        return -1;
-    }
-
     err_t err;
     pbuf_desc mdesc;
 
