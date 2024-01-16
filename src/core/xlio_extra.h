@@ -650,6 +650,7 @@ typedef uint32_t xlio_io_key_t;
 #define XLIO_EXTRA_ATTR_IO_API       0x2
 struct xlio_extra_attr {
     unsigned long flags;
+    void (*send_comp_cb)(uintptr_t userdata);
 };
 
 struct xlio_socket_attr {

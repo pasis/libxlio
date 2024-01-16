@@ -40,6 +40,7 @@
 #include "util/xlio_list.h"
 #include "proto/mapping.h"
 #include "proto/mem_desc.h"
+#include "sock/sock-extra.h"
 
 // Forward declarations
 class ib_ctx_handler;
@@ -59,7 +60,10 @@ inline static void free_lwip_pbuf(struct pbuf_custom *pbuf_custom)
         mdesc->put();
     }
 
-    if (p_desc->m_flags & mem_buf_desc_t::ZCOPY) {
+    if (pbuf_custom->pbuf.desc.attr == PBUF_DESC_EXPRESS && pbuf_custom->pbuf.desc.opaque &&
+        g_send_comp_cb) {
+        g_send_comp_cb(reinterpret_cast<uintptr_t>(pbuf_custom->pbuf.desc.opaque));
+    } else if (p_desc->m_flags & mem_buf_desc_t::ZCOPY) {
         p_desc->tx.zc.callback(p_desc);
     }
     pbuf_custom->pbuf.flags = 0;

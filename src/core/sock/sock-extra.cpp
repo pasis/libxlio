@@ -347,10 +347,12 @@ extern "C" int xlio_ioctl(void *cmsg_hdr, size_t cmsg_len)
     return 0;
 }
 
+/* Avoid calling TX from the callback context for now. */
+void (*g_send_comp_cb)(uintptr_t) = nullptr;
 extern "C" int xlio_extra_init(const struct xlio_extra_attr *attr)
 {
-    NOT_IN_USE(attr);
-    return -1;
+    g_send_comp_cb = attr->send_comp_cb;
+    return 0;
 }
 
 extern "C" void xlio_extra_destroy()

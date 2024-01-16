@@ -37,4 +37,6 @@
 
 struct xlio_api_t *extra_api(void);
 
+extern void (*g_send_comp_cb)(uintptr_t);
+
 #endif /* _SOCK_EXTRA_H_ */
