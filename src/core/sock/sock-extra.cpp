@@ -349,6 +349,7 @@ extern "C" int xlio_ioctl(void *cmsg_hdr, size_t cmsg_len)
 
 extern "C" int xlio_extra_init(const struct xlio_extra_attr *attr)
 {
+    NOT_IN_USE(attr);
     return -1;
 }
 
@@ -356,18 +357,21 @@ extern "C" void xlio_extra_destroy()
 {
 }
 
-extern "C" void xlio_socket_attr_init(const struct xlio_socket_attr *attr)
+extern "C" void xlio_socket_attr_init(struct xlio_socket_attr *attr)
 {
     memset(attr, 0, sizeof(*attr));
 }
 
 extern "C" int xlio_socket_create(const struct xlio_socket_attr *attr, xlio_socket_t *out)
 {
+    NOT_IN_USE(attr);
+    NOT_IN_USE(out);
     return -1;
 }
 
 extern "C" int xlio_socket_destroy(xlio_socket_t sock)
 {
+    NOT_IN_USE(sock);
     /* may fail with EBUSY if ZC buffer not returned yet */
     return -1;
 }
@@ -386,11 +390,16 @@ extern "C" xlio_socket_t xlio_fd_socket(int fd)
 extern "C" int xlio_io_key_create(xlio_socket_t sock, const struct xlio_io_key_attr *attr,
                                   xlio_io_key_t *out)
 {
+    NOT_IN_USE(sock);
+    NOT_IN_USE(attr);
+    NOT_IN_USE(out);
     return -1;
 }
 
 extern "C" int xlio_io_key_destroy(xlio_socket_t sock, xlio_io_key_t key)
 {
+    NOT_IN_USE(sock);
+    NOT_IN_USE(key);
     /* sock in the interface forces user to destroy key before socket destruction
      * and if we destroy all the keys in the socket destructor as garbage collector,
      * user cannot double free it because it doesn't have access to the closed socket
@@ -416,7 +425,7 @@ extern "C" int xlio_io_send(xlio_socket_t sock, const void *data, size_t len,
      *  1. each send/sendv is a complete single PDU
      *  2. each send/sendv is part of a single PDU
      */
-    struct iovec iov[1] = {.iov_base = data, .iov_len = len};
+    const struct iovec iov = {.iov_base = const_cast<void *>(data), .iov_len = len};
     return xlio_io_sendv(sock, &iov, 1, attr);
 }
 
@@ -424,8 +433,8 @@ extern "C" int xlio_io_sendv(xlio_socket_t sock, const struct iovec *iov, unsign
                              const struct xlio_io_attr *attr)
 {
     sockinfo_tcp *si = reinterpret_cast<sockinfo_tcp *>(sock);
-    return si->tcp_tx_express(iov, iovcnt, attr->mkey, attr->flags,
-                              static_cast<void *>(attr->userdata));
+    return si->tcp_tx_express(iov, iovcnt, attr->mkey, static_cast<xlio_express_flags>(attr->flags),
+                              reinterpret_cast<void *>(attr->userdata));
 }
 
 extern "C" void xlio_io_flush(xlio_socket_t sock)

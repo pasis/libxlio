@@ -672,7 +672,7 @@ struct xlio_io_attr {
 
 int xlio_extra_init(const struct xlio_extra_attr *attr);
 void xlio_extra_destroy();
-void xlio_socket_attr_init(const struct xlio_socket_attr *attr);
+void xlio_socket_attr_init(struct xlio_socket_attr *attr);
 int xlio_socket_create(const struct xlio_socket_attr *attr, xlio_socket_t *out);
 int xlio_socket_destroy(xlio_socket_t sock);
 int xlio_socket_fd(xlio_socket_t sock);
