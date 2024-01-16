@@ -36,6 +36,7 @@
 
 #include <util/sys_vars.h>
 #include <util/libxlio.h>
+#include <utils/compiler.h>
 #include <vlogger/vlogger.h>
 #include <dev/buffer_pool.h>
 #include <event/thread_local_event_handler.h>
@@ -349,48 +350,50 @@ extern "C" int xlio_ioctl(void *cmsg_hdr, size_t cmsg_len)
 
 /* Avoid calling TX from the callback context for now. */
 void (*g_send_comp_cb)(uintptr_t) = nullptr;
-extern "C" int xlio_extra_init(const struct xlio_extra_attr *attr)
+extern "C" EXPORT_SYMBOL int xlio_extra_init(const struct xlio_extra_attr *attr)
 {
     g_send_comp_cb = attr->send_comp_cb;
     return 0;
 }
 
-extern "C" void xlio_extra_destroy()
+extern "C" EXPORT_SYMBOL void xlio_extra_destroy()
 {
 }
 
-extern "C" void xlio_socket_attr_init(struct xlio_socket_attr *attr)
+extern "C" EXPORT_SYMBOL void xlio_socket_attr_init(struct xlio_socket_attr *attr)
 {
     memset(attr, 0, sizeof(*attr));
 }
 
-extern "C" int xlio_socket_create(const struct xlio_socket_attr *attr, xlio_socket_t *out)
+extern "C" EXPORT_SYMBOL int xlio_socket_create(const struct xlio_socket_attr *attr,
+                                                xlio_socket_t *out)
 {
     NOT_IN_USE(attr);
     NOT_IN_USE(out);
     return -1;
 }
 
-extern "C" int xlio_socket_destroy(xlio_socket_t sock)
+extern "C" EXPORT_SYMBOL int xlio_socket_destroy(xlio_socket_t sock)
 {
     NOT_IN_USE(sock);
     /* may fail with EBUSY if ZC buffer not returned yet */
     return -1;
 }
 
-extern "C" int xlio_socket_fd(xlio_socket_t sock)
+extern "C" EXPORT_SYMBOL int xlio_socket_fd(xlio_socket_t sock)
 {
     return reinterpret_cast<sockinfo_tcp *>(sock)->get_fd();
 }
 
-extern "C" xlio_socket_t xlio_fd_socket(int fd)
+extern "C" EXPORT_SYMBOL xlio_socket_t xlio_fd_socket(int fd)
 {
     return reinterpret_cast<xlio_socket_t>(
         dynamic_cast<sockinfo_tcp *>(fd_collection_get_sockfd(fd)));
 }
 
-extern "C" int xlio_io_key_create(xlio_socket_t sock, const struct xlio_io_key_attr *attr,
-                                  xlio_io_key_t *out)
+extern "C" EXPORT_SYMBOL int xlio_io_key_create(xlio_socket_t sock,
+                                                const struct xlio_io_key_attr *attr,
+                                                xlio_io_key_t *out)
 {
     NOT_IN_USE(sock);
     NOT_IN_USE(attr);
@@ -398,7 +401,7 @@ extern "C" int xlio_io_key_create(xlio_socket_t sock, const struct xlio_io_key_a
     return -1;
 }
 
-extern "C" int xlio_io_key_destroy(xlio_socket_t sock, xlio_io_key_t key)
+extern "C" EXPORT_SYMBOL int xlio_io_key_destroy(xlio_socket_t sock, xlio_io_key_t key)
 {
     NOT_IN_USE(sock);
     NOT_IN_USE(key);
@@ -409,8 +412,8 @@ extern "C" int xlio_io_key_destroy(xlio_socket_t sock, xlio_io_key_t key)
     return -1;
 }
 
-extern "C" int xlio_io_send(xlio_socket_t sock, const void *data, size_t len,
-                            const struct xlio_io_attr *attr)
+extern "C" EXPORT_SYMBOL int xlio_io_send(xlio_socket_t sock, const void *data, size_t len,
+                                          const struct xlio_io_attr *attr)
 {
     /*
      * xlio_io_attr:
@@ -431,15 +434,15 @@ extern "C" int xlio_io_send(xlio_socket_t sock, const void *data, size_t len,
     return xlio_io_sendv(sock, &iov, 1, attr);
 }
 
-extern "C" int xlio_io_sendv(xlio_socket_t sock, const struct iovec *iov, unsigned iovcnt,
-                             const struct xlio_io_attr *attr)
+extern "C" EXPORT_SYMBOL int xlio_io_sendv(xlio_socket_t sock, const struct iovec *iov,
+                                           unsigned iovcnt, const struct xlio_io_attr *attr)
 {
     sockinfo_tcp *si = reinterpret_cast<sockinfo_tcp *>(sock);
     return si->tcp_tx_express(iov, iovcnt, attr->mkey, static_cast<xlio_express_flags>(attr->flags),
                               reinterpret_cast<void *>(attr->userdata));
 }
 
-extern "C" void xlio_io_flush(xlio_socket_t sock)
+extern "C" EXPORT_SYMBOL void xlio_io_flush(xlio_socket_t sock)
 {
     sockinfo_tcp *si = reinterpret_cast<sockinfo_tcp *>(sock);
     si->flush();
