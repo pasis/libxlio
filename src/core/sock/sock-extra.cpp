@@ -488,6 +488,12 @@ struct xlio_api_t *extra_api(void)
             XLIO_EXTRA_API_SOCKETXTREME_FREE_XLIO_BUFF);
         SET_EXTRA_API(dump_fd_stats, xlio_dump_fd_stats, XLIO_EXTRA_API_DUMP_FD_STATS);
         SET_EXTRA_API(ioctl, xlio_ioctl, XLIO_EXTRA_API_IOCTL);
+
+        xlio_api->xlio_extra_init = &xlio_extra_init;
+        xlio_api->xlio_fd_socket = &xlio_fd_socket;
+        xlio_api->xlio_io_send = &xlio_io_send;
+        xlio_api->xlio_io_sendv = &xlio_io_sendv;
+        xlio_api->xlio_io_flush = &xlio_io_flush;
     }
 
     return xlio_api;
