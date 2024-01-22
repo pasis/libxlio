@@ -6,6 +6,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <poll.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,8 +16,12 @@
 
 #include <infiniband/verbs.h>
 
+bool tx_comp_done = false;
+
 void send_comp_cb(uintptr_t userdata)
 {
+    tx_comp_done = true;
+    printf("Tx completion: userdata=%lx\n", userdata);
 }
 
 int main(int argc, char **argv)
@@ -89,13 +94,32 @@ int main(int argc, char **argv)
     };
     rc = xlio_api->xlio_io_send(sock, header, sizeof(header), &io_attr);
     assert(rc >= 0);
+
+    io_attr.flags = 0;
+    io_attr.mkey = mkey_payload;
+    io_attr.userdata = 0xdeaedbeef;
+    rc = xlio_api->xlio_io_send(sock, payload, 32, &io_attr);
+    assert(rc >= 0);
+
     xlio_api->xlio_io_flush(sock);
 
-    sleep(1);
+    int ringfd;
+    rc = xlio_api->get_socket_rings_fds(fd, &ringfd, 1);
+    assert(rc == 1);
+
+    struct xlio_socketxtreme_completion_t comps;
+    while (!tx_comp_done) {
+        (void)xlio_api->socketxtreme_poll(ringfd, &comps, 1, SOCKETXTREME_POLL_TX);
+    }
+
+#if 0
+    while (!tx_comp_done) {
+        struct pollfd pfd = { .fd = fd, .events = POLLIN | POLLOUT, };
+        (void)poll(&pfd, 1, -1);
+    }
+#endif
 
     close(fd);
-
-    sleep(1);
 
     ibv_dereg_mr(mr_header);
     ibv_dereg_mr(mr_payload);
