@@ -18,10 +18,10 @@
 
 bool tx_comp_done = false;
 
-void send_comp_cb(uintptr_t userdata)
+void send_comp_cb(uintptr_t sockdata, uintptr_t userdata)
 {
     tx_comp_done = true;
-    printf("Tx completion: userdata=%lx\n", userdata);
+    printf("Tx completion: sockdata=%lx userdata=%lx\n", sockdata, userdata);
 }
 
 int main(int argc, char **argv)
@@ -63,6 +63,7 @@ int main(int argc, char **argv)
 
     xlio_socket_t sock = xlio_api->xlio_fd_socket(fd);
     assert(sock != NULL);
+    xlio_api->xlio_socket_userdata(sock, 0xdeadc0de);
 
     struct xlio_pd_attr pd_attr = {};
     socklen_t pd_attr_in_out_len = sizeof(pd_attr);
@@ -97,7 +98,7 @@ int main(int argc, char **argv)
 
     io_attr.flags = 0;
     io_attr.mkey = mkey_payload;
-    io_attr.userdata = 0xdeaedbeef;
+    io_attr.userdata = 0xdeadbeef;
     rc = xlio_api->xlio_io_send(sock, payload, 32, &io_attr);
     assert(rc >= 0);
 

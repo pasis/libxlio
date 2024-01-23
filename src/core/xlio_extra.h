@@ -49,7 +49,7 @@ typedef uint32_t xlio_io_key_t;
 #define XLIO_EXTRA_ATTR_IO_API       0x2
 struct xlio_extra_attr {
     unsigned long flags;
-    void (*send_comp_cb)(uintptr_t userdata);
+    void (*send_comp_cb)(uintptr_t sockdata, uintptr_t userdata);
 };
 
 struct xlio_socket_attr {
@@ -77,6 +77,7 @@ int xlio_socket_create(const struct xlio_socket_attr *attr, xlio_socket_t *out);
 int xlio_socket_destroy(xlio_socket_t sock);
 int xlio_socket_fd(xlio_socket_t sock);
 xlio_socket_t xlio_fd_socket(int fd); /* XXX Temporary API. */
+void xlio_socket_userdata(xlio_socket_t sock, uintptr_t userdata); /* XXX Temporary API. */
 int xlio_io_key_create(xlio_socket_t sock, const struct xlio_io_key_attr *attr, xlio_io_key_t *out);
 int xlio_io_key_destroy(xlio_socket_t sock, xlio_io_key_t key);
 int xlio_io_send(xlio_socket_t sock, const void *data, size_t len, const struct xlio_io_attr *attr);
@@ -666,9 +667,11 @@ struct __attribute__((packed)) xlio_api_t {
 
     int (*xlio_extra_init)(const struct xlio_extra_attr *attr);
     xlio_socket_t (*xlio_fd_socket)(int fd);
-    int (*xlio_io_send)(xlio_socket_t sock, const void *data, size_t len, const struct xlio_io_attr *attr);
+    void (*xlio_socket_userdata)(xlio_socket_t sock, uintptr_t userdata);
+    int (*xlio_io_send)(xlio_socket_t sock, const void *data, size_t len,
+                        const struct xlio_io_attr *attr);
     int (*xlio_io_sendv)(xlio_socket_t sock, const struct iovec *iov, unsigned iovcnt,
-                      const struct xlio_io_attr *attr);
+                         const struct xlio_io_attr *attr);
     void (*xlio_io_flush)(xlio_socket_t sock);
 };
 

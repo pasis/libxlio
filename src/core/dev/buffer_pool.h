@@ -62,7 +62,8 @@ inline static void free_lwip_pbuf(struct pbuf_custom *pbuf_custom)
 
     if (pbuf_custom->pbuf.desc.attr == PBUF_DESC_EXPRESS && pbuf_custom->pbuf.desc.opaque &&
         g_send_comp_cb) {
-        g_send_comp_cb(reinterpret_cast<uintptr_t>(pbuf_custom->pbuf.desc.opaque));
+        g_send_comp_cb(pbuf_custom->pbuf.desc.sockdata,
+                       reinterpret_cast<uintptr_t>(pbuf_custom->pbuf.desc.opaque));
     } else if (p_desc->m_flags & mem_buf_desc_t::ZCOPY) {
         p_desc->tx.zc.callback(p_desc);
     }

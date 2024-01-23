@@ -353,6 +353,8 @@ public:
         unlock_tcp_con();
     }
 
+    inline void set_userdata(uintptr_t userdata) { m_userdata = userdata; }
+
 protected:
     virtual void lock_rx_q();
     virtual void unlock_rx_q();
@@ -584,6 +586,7 @@ private:
     int m_backlog;
 
     void *m_timer_handle;
+    uintptr_t m_userdata = 0;
     multilock m_tcp_con_lock;
 
     // used for reporting 'connected' on second non-blocking call to connect or

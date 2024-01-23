@@ -71,6 +71,7 @@ typedef struct {
         int fd;
         void *opaque;
     };
+    uintptr_t sockdata;
 } pbuf_desc;
 
 struct pbuf {
@@ -118,7 +119,6 @@ typedef void (*pbuf_free_custom_fn)(struct pbuf *p);
 struct pbuf_custom {
     /** The actual pbuf */
     struct pbuf pbuf;
-    u64_t padding; /* TODO Remove and optimize mem_buf_desc alignment. */
 };
 
 /* Initializes the pbuf module. This call is empty for now, but may not be in future. */

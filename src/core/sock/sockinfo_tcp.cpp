@@ -6054,6 +6054,7 @@ int sockinfo_tcp::tcp_tx_express(const struct iovec *iov, unsigned iov_len, uint
     /* XXX TODO opaque in express API must be set in the last pbuf only including splits. This is
      * POC approach, in the future we need a better way, probably an object per PDU. */
     mdesc.opaque = opaque_op;
+    mdesc.sockdata = m_userdata;
 
     int bytes_written = 0;
 

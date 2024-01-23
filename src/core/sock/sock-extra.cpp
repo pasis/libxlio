@@ -349,7 +349,7 @@ extern "C" int xlio_ioctl(void *cmsg_hdr, size_t cmsg_len)
 }
 
 /* Avoid calling TX from the callback context for now. */
-void (*g_send_comp_cb)(uintptr_t) = nullptr;
+void (*g_send_comp_cb)(uintptr_t, uintptr_t) = nullptr;
 extern "C" EXPORT_SYMBOL int xlio_extra_init(const struct xlio_extra_attr *attr)
 {
     g_send_comp_cb = attr->send_comp_cb;
@@ -389,6 +389,13 @@ extern "C" EXPORT_SYMBOL xlio_socket_t xlio_fd_socket(int fd)
 {
     return reinterpret_cast<xlio_socket_t>(
         dynamic_cast<sockinfo_tcp *>(fd_collection_get_sockfd(fd)));
+}
+
+extern "C" EXPORT_SYMBOL void xlio_socket_userdata(xlio_socket_t sock, uintptr_t userdata)
+{
+    sockinfo_tcp *si = reinterpret_cast<sockinfo_tcp *>(sock);
+
+    si->set_userdata(userdata);
 }
 
 extern "C" EXPORT_SYMBOL int xlio_io_key_create(xlio_socket_t sock,
@@ -491,6 +498,7 @@ struct xlio_api_t *extra_api(void)
 
         xlio_api->xlio_extra_init = &xlio_extra_init;
         xlio_api->xlio_fd_socket = &xlio_fd_socket;
+        xlio_api->xlio_socket_userdata = &xlio_socket_userdata;
         xlio_api->xlio_io_send = &xlio_io_send;
         xlio_api->xlio_io_sendv = &xlio_io_sendv;
         xlio_api->xlio_io_flush = &xlio_io_flush;
