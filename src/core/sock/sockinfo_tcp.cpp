@@ -4580,6 +4580,7 @@ int sockinfo_tcp::tcp_setsockopt(int __level, int __optname, __const void *__opt
                     }
                     set_ring_logic_rx(ring_alloc_logic_attr(RING_LOGIC_ISOLATE, true));
                     set_ring_logic_tx(ring_alloc_logic_attr(RING_LOGIC_ISOLATE, true));
+                    g_global_stat_static.socket_isolated.fetch_add(1, std::memory_order_relaxed);
                     break;
                 }
             }

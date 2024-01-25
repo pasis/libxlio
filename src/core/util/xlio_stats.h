@@ -415,6 +415,7 @@ typedef struct {
     int n_pending_sockets;
     std::atomic<int> socket_tcp_destructor_counter;
     std::atomic<int> socket_udp_destructor_counter;
+    std::atomic<int> socket_isolated;
     void init()
     {
         n_tcp_seg_pool_size = 0;
