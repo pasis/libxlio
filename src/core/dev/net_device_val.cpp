@@ -1429,10 +1429,19 @@ ring *net_device_val_eth::create_ring(resource_allocation_key *key)
     try {
         switch (m_bond) {
         case NO_BOND:
-            ring = new ring_eth(
-                get_if_idx(), nullptr,
-                key->get_ring_alloc_logic() == RING_LOGIC_ISOLATE ? RING_ISOLATE : RING_ETH, true,
-                (key ? key->get_use_locks() : true));
+            ring_type_t type;
+            switch (key->get_ring_alloc_logic()) {
+            case RING_LOGIC_PER_OBJECT:
+                type = RING_NEIGH;
+                break;
+            case RING_LOGIC_ISOLATE:
+                type = RING_ISOLATE;
+                break;
+            default:
+                type = RING_ETH;
+            }
+            ring = new ring_eth(get_if_idx(), nullptr, type, true,
+                                (key ? key->get_use_locks() : true));
             break;
         case ACTIVE_BACKUP:
         case LAG_8023ad:
