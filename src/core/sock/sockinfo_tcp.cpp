@@ -6062,6 +6062,7 @@ int sockinfo_tcp::tcp_tx_express(const struct iovec *iov, unsigned iov_len, uint
     lock_tcp_con();
 
     for (unsigned i = 0; i < iov_len; ++i) {
+        /* TODO Accept iov to tcp_write? or revert changes on an error. */
         err = tcp_write_express(&m_pcb, iov[i].iov_base, iov[i].iov_len, &mdesc);
         if (err != ERR_OK) {
             /* The only error in tcp_write_express is a memory error */

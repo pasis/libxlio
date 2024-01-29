@@ -445,8 +445,9 @@ extern "C" EXPORT_SYMBOL int xlio_io_sendv(xlio_socket_t sock, const struct iove
                                            unsigned iovcnt, const struct xlio_io_attr *attr)
 {
     sockinfo_tcp *si = reinterpret_cast<sockinfo_tcp *>(sock);
-    return si->tcp_tx_express(iov, iovcnt, attr->mkey, static_cast<xlio_express_flags>(attr->flags),
-                              reinterpret_cast<void *>(attr->userdata));
+    int ret = si->tcp_tx_express(iov, iovcnt, attr->mkey, static_cast<xlio_express_flags>(attr->flags),
+                                 reinterpret_cast<void *>(attr->userdata));
+    return ret >= 0 ? 0 : -1;
 }
 
 extern "C" EXPORT_SYMBOL void xlio_io_flush(xlio_socket_t sock)
