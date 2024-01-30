@@ -803,10 +803,10 @@ ssize_t sockinfo_tcp_ops_tls::tx(xlio_tx_call_attr_t &tx_arg)
                 ret2 = m_p_sock->tcp_tx_express(tls_arg.attr.iov, tls_arg.attr.sz_iov, 0,
                                                 XLIO_EXPRESS_FLAG_MDESC,
                                                 reinterpret_cast<void *>(rec));
-
             } else {
                 ret2 = m_p_sock->tcp_tx(tls_arg);
             }
+            /* XXX TODO Bug here for blocking sendfile() */
             if (block_this_run && (ret2 != (ssize_t)tls_arg.attr.iov[0].iov_len)) {
                 if ((ret2 >= 0) || (errno == EINTR && !g_b_exit)) {
                     ret2 = ret2 < 0 ? 0 : ret2;
