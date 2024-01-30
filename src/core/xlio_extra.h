@@ -671,6 +671,8 @@ struct __attribute__((packed)) xlio_api_t {
     int (*xlio_extra_init)(const struct xlio_extra_attr *attr);
     xlio_socket_t (*xlio_fd_socket)(int fd);
     void (*xlio_socket_userdata)(xlio_socket_t sock, uintptr_t userdata);
+    int (*xlio_io_key_create)(xlio_socket_t sock, const struct xlio_io_key_attr *attr,
+                              xlio_io_key_t *out);
     int (*xlio_io_send)(xlio_socket_t sock, const void *data, size_t len,
                         const struct xlio_io_attr *attr);
     int (*xlio_io_sendv)(xlio_socket_t sock, const struct iovec *iov, unsigned iovcnt,

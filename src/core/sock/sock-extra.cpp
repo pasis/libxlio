@@ -517,6 +517,7 @@ struct xlio_api_t *extra_api(void)
         xlio_api->xlio_extra_init = &xlio_extra_init;
         xlio_api->xlio_fd_socket = &xlio_fd_socket;
         xlio_api->xlio_socket_userdata = &xlio_socket_userdata;
+        xlio_api->xlio_io_key_create = &xlio_io_key_create;
         xlio_api->xlio_io_send = &xlio_io_send;
         xlio_api->xlio_io_sendv = &xlio_io_sendv;
         xlio_api->xlio_io_flush = &xlio_io_flush;

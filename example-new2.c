@@ -28,10 +28,12 @@ int main(int argc, char **argv)
 {
     int rc;
 
-    if (argc != 2) {
-        printf("Usage: %s <IP>\n", argv[0]);
+    if (argc < 2) {
+        printf("Usage: %s <IP> [crypto]\n", argv[0]);
         return 1;
     }
+
+    bool is_crypto = (argc == 3) && (strcmp(argv[2], "crypto") == 0);
 
     struct xlio_api_t *xlio_api = xlio_get_api();
     if (!xlio_api) {
@@ -65,6 +67,16 @@ int main(int argc, char **argv)
     assert(sock != NULL);
     xlio_api->xlio_socket_userdata(sock, 0xdeadc0de);
 
+    uint8_t key_blob[72] = {0};
+    struct xlio_io_key_attr key_attr = {
+        .key_blob = key_blob,
+        .key_blob_size = 32,
+        .key_size = 16,
+    };
+    xlio_io_key_t key;
+    rc = xlio_api->xlio_io_key_create(sock, &key_attr, &key);
+    assert(rc == 0);
+
     struct xlio_pd_attr pd_attr = {};
     socklen_t pd_attr_in_out_len = sizeof(pd_attr);
     rc = getsockopt(fd, SOL_SOCKET, SO_XLIO_PD, &pd_attr, &pd_attr_in_out_len);
@@ -87,19 +99,19 @@ int main(int argc, char **argv)
 
     memset(payload, 'a', sizeof(payload));
 
-    struct xlio_io_attr io_attr =  {
+    struct xlio_io_attr io_attr = {
         .flags = XLIO_IO_FLAG_MSG_MORE,
         .mkey = mkey_header,
-        .key = 0,
+        .key = key,
         .userdata = 0,
     };
     rc = xlio_api->xlio_io_send(sock, header, sizeof(header), &io_attr);
     assert(rc >= 0);
 
-    io_attr.flags = 0;
+    io_attr.flags = 0 | (XLIO_IO_FLAG_CRYPTO * is_crypto);
     io_attr.mkey = mkey_payload;
     io_attr.userdata = 0xdeadbeef;
-    rc = xlio_api->xlio_io_send(sock, payload, 32, &io_attr);
+    rc = xlio_api->xlio_io_send(sock, payload, is_crypto ? 4096 : 32, &io_attr);
     assert(rc >= 0);
 
     xlio_api->xlio_io_flush(sock);
