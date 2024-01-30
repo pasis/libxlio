@@ -57,7 +57,9 @@ struct xlio_socket_attr {
 };
 
 struct xlio_io_key_attr {
-    int unused;
+    void *key_blob;
+    uint32_t key_blob_size;
+    uint32_t key_size;
 };
 
 #define XLIO_IO_FLAG_MSG_MORE 0x1

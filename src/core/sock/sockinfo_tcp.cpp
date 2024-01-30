@@ -6027,6 +6027,32 @@ inline bool sockinfo_tcp::handle_bind_no_port(int &bind_ret, in_port_t in_port,
     return CONTINUE_WITH_BIND;
 }
 
+int sockinfo_tcp::io_key_create(const struct xlio_io_key_attr *attr, xlio_io_key_t *out)
+{
+    ring *tx_ring = get_tx_ring();
+    ib_ctx_handler *ctx = tx_ring->get_ctx(0);
+    dpcp::adapter *adapter = ctx->get_dpcp_adapter();
+
+    dpcp::dek_attr dek_attr = {
+        .key_blob = attr->key_blob,
+        .key_blob_size = attr->key_blob_size,
+        .key_size = attr->key_size,
+        .pd_id = adapter->get_pd(),
+        .opaque = 0,
+    };
+
+    dpcp::aes_xts_dek *dek = nullptr;
+    dpcp::status ret = adapter->create_aes_txs_dek(dek_attr, dek);
+    if (ret != dpcp::DPCP_OK) {
+        return -1;
+    }
+
+    /* TODO Remember dek in some collection */
+
+    *out = dek->get_key_id();
+    return 0;
+}
+
 int sockinfo_tcp::tcp_tx_express(const struct iovec *iov, unsigned iov_len, uint32_t mkey,
                                  xlio_express_flags flags, void *opaque_op)
 {

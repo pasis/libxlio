@@ -343,6 +343,7 @@ public:
         return sockinfo::register_callback(callback, context);
     }
 
+    int io_key_create(const struct xlio_io_key_attr *attr, xlio_io_key_t *out);
     int tcp_tx_express(const struct iovec *iov, unsigned iov_len, uint32_t mkey,
                        xlio_express_flags flags, void *opaque_op);
 

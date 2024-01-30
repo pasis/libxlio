@@ -402,10 +402,8 @@ extern "C" EXPORT_SYMBOL int xlio_io_key_create(xlio_socket_t sock,
                                                 const struct xlio_io_key_attr *attr,
                                                 xlio_io_key_t *out)
 {
-    NOT_IN_USE(sock);
-    NOT_IN_USE(attr);
-    NOT_IN_USE(out);
-    return -1;
+    sockinfo_tcp *si = reinterpret_cast<sockinfo_tcp *>(sock);
+    return si->io_key_create(attr, out);
 }
 
 extern "C" EXPORT_SYMBOL int xlio_io_key_destroy(xlio_socket_t sock, xlio_io_key_t key)
