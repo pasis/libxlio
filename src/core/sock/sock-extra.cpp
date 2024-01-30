@@ -443,7 +443,26 @@ extern "C" EXPORT_SYMBOL int xlio_io_sendv(xlio_socket_t sock, const struct iove
                                            unsigned iovcnt, const struct xlio_io_attr *attr)
 {
     sockinfo_tcp *si = reinterpret_cast<sockinfo_tcp *>(sock);
-    int ret = si->tcp_tx_express(iov, iovcnt, attr->mkey, static_cast<xlio_express_flags>(attr->flags),
+    uint32_t mkey = attr->mkey;
+
+    if (attr->flags & XLIO_IO_FLAG_CRYPTO) {
+        /* XXX Assume the iov size is exactly 4KB for initial check. */
+        ring *tx_ring = si->get_tx_ring();
+        if (!tx_ring->credits_get(SQ_CREDITS_UMR_CRYPTO_MKEY)) {
+            errno = EAGAIN;
+            return -1;
+        }
+
+        dpcp::crypto_mkey *cmkey = tx_ring->get_crypto_mkey();
+        uint32_t cmkey_id;
+        (void)cmkey->get_id(cmkey_id);
+        tx_ring->setup_crypto_mkey(cmkey_id, iov, iovcnt, attr->mkey,
+                                   static_cast<uint32_t>(attr->key), attr->lba,
+                                   si->io_get_block_size());
+        mkey = cmkey_id;
+    }
+
+    int ret = si->tcp_tx_express(iov, iovcnt, mkey, static_cast<xlio_express_flags>(attr->flags),
                                  reinterpret_cast<void *>(attr->userdata));
     return ret >= 0 ? 0 : -1;
 }

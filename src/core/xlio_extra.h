@@ -69,6 +69,7 @@ struct xlio_io_attr {
     unsigned flags;
     uint32_t mkey;
     xlio_io_key_t key;
+    uint64_t lba;
     uintptr_t userdata;
 };
 

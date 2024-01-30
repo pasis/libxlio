@@ -256,6 +256,27 @@ public:
         m_hqtx->nvme_set_progress_context(tis, tcp_seqno);
     }
 
+    dpcp::crypto_mkey *get_crypto_mkey()
+    {
+        /* XXX Mkey is never destroyed. */
+        if (!m_crypto_mkey) {
+            ib_ctx_handler *ctx = get_ctx(0);
+            dpcp::adapter *adapter = ctx->get_dpcp_adapter();
+            dpcp::status status = adapter->create_crypto_mkey(m_crypto_mkey, 4);
+            if (status != dpcp::DPCP_OK) {
+                m_crypto_mkey = nullptr;
+            }
+        }
+        return m_crypto_mkey;
+    }
+
+    void setup_crypto_mkey(uint32_t cmkey_id, const struct iovec *iov, unsigned iov_len,
+                           uint32_t mkey, uint32_t dek, uint64_t lba, unsigned block_size) override
+    {
+        std::lock_guard<decltype(m_lock_ring_tx)> lock(m_lock_ring_tx);
+        m_hqtx->setup_crypto_mkey(cmkey_id, iov, iov_len, mkey, dek, lba, block_size);
+    }
+
     void post_nop_fence(void) override
     {
         std::lock_guard<decltype(m_lock_ring_tx)> lock(m_lock_ring_tx);
@@ -378,6 +399,8 @@ private:
         /* Thread-safety lock for get/put operations under the queue */
         lock_spin lock_ec_list;
     } m_socketxtreme;
+
+    dpcp::crypto_mkey *m_crypto_mkey = nullptr;
 
     lock_mutex m_lock_ring_tx_buf_wait;
     uint32_t m_tx_num_bufs = 0U;

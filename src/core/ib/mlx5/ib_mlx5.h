@@ -376,6 +376,29 @@ struct mlx5e_set_transport_static_params_wqe {
     mlx5_wqe_transport_static_params_seg params;
 };
 
+struct mlx5_wqe_crypto_bsf_seg {
+    uint8_t size_type;
+    uint8_t enc_order;
+    uint8_t rsvd0;
+    uint8_t enc_standard;
+    __be32 raw_data_size;
+    uint8_t crypto_block_size_pointer;
+    uint8_t rsvd1[7];
+    uint64_t xts_initial_tweak[2];
+    __be32 dek_pointer;
+    uint8_t rsvd2[4];
+    uint8_t keytag[8];
+    uint8_t rsvd3[16];
+};
+
+struct mlx5_umr_crypto_key_wqe {
+    mlx5_wqe ctrl;
+    xlio_mlx5_wqe_umr_ctrl_seg uctrl;
+    mlx5_mkey_seg mkc;
+    struct mlx5_wqe_umr_klm_seg klm[4];
+    mlx5_wqe_crypto_bsf_seg bsf;
+};
+
 /* WQE control segment fence flags */
 enum {
     MLX5_FENCE_MODE_NONE = 0 << 5,

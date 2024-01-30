@@ -1473,6 +1473,98 @@ void hw_queue_tx::ti_released(xlio_ti *) {};
 void hw_queue_tx::destroy_tis_cache(void) {};
 #endif /* defined(DEFINED_UTLS) */
 
+void hw_queue_tx::setup_crypto_mkey(uint32_t cmkey_id, const struct iovec *iov, unsigned iov_len,
+                                    uint32_t mkey, uint32_t dek, uint64_t lba, unsigned block_size)
+{
+    mlx5_umr_crypto_key_wqe *wqe = reinterpret_cast<mlx5_umr_crypto_key_wqe *>(m_sq_wqe_hot);
+    xlio_mlx5_wqe_ctrl_seg *cseg = &wqe->ctrl.ctrl;
+    xlio_mlx5_wqe_umr_ctrl_seg *ucseg = &wqe->uctrl;
+    struct mlx5_mkey_seg *mkc = &wqe->mkc; // 64
+    struct mlx5_wqe_umr_klm_seg *klm = &wqe->klm[0]; // 64
+    mlx5_wqe_crypto_bsf_seg *bsf = &wqe->bsf; // 64
+    const uint8_t opmod = 0;
+    int wqebbs = 4;
+    int wqebbs_top = 0;
+    uint64_t data_len = 0;
+
+    // XXX TODO make it better and add support for variable klm section
+    if (m_sq_wqes_end == (uint8_t *)mkc) {
+        mkc = reinterpret_cast<struct mlx5_mkey_seg *>(m_sq_wqes);
+        klm = reinterpret_cast<struct mlx5_wqe_umr_klm_seg *>(mkc + 1);
+        bsf = reinterpret_cast<mlx5_wqe_crypto_bsf_seg *>((char *)klm + 64); // XXX
+        wqebbs = 1;
+        wqebbs_top = 3;
+    } else if (m_sq_wqes_end == (uint8_t *)klm) {
+        klm = reinterpret_cast<struct mlx5_wqe_umr_klm_seg *>(m_sq_wqes);
+        bsf = reinterpret_cast<mlx5_wqe_crypto_bsf_seg *>((char *)klm + 64); // XXX
+        wqebbs = 2;
+        wqebbs_top = 2;
+    } else if (m_sq_wqes_end == (uint8_t *)bsf) {
+        bsf = reinterpret_cast<mlx5_wqe_crypto_bsf_seg *>(m_sq_wqes); // XXX
+        wqebbs = 3;
+        wqebbs_top = 1;
+    }
+
+    // XXX: We set inline_hdr_sz for every new hot wqe. This corrupts UMR WQE without memset().
+    memset(m_sq_wqe_hot, 0, sizeof(*m_sq_wqe_hot));
+
+    cseg->opmod_idx_opcode =
+        htobe32(((m_sq_wqe_counter & 0xffff) << 8) | MLX5_OPCODE_UMR | (opmod << 24));
+    cseg->qpn_ds = htobe32((m_mlx5_qp.qpn << MLX5_WQE_CTRL_QPN_SHIFT) | STATIC_PARAMS_DS_CNT);
+    cseg->fm_ce_se = 0;
+    cseg->tis_tir_num = htobe32(cmkey_id);
+
+    ucseg->flags = MLX5_UMR_INLINE;
+    ucseg->xlt_octowords = htobe16(4);
+    ucseg->bsf_octowords = htobe16(sizeof(*bsf) / 16);
+    ucseg->mkey_mask = htobe64(MLX5_WQE_UMR_CTRL_MKEY_MASK_FREE | MLX5_WQE_UMR_CTRL_MKEY_MASK_LEN);
+
+    assert(iov_len <= 4); // XXX No support of multiple KLM WQEBBs for now
+
+    unsigned i;
+    for (i = 0; i < iov_len; ++i) {
+        data_len += iov[i].iov_len;
+        klm[i].byte_count = htobe32(iov[i].iov_len);
+        klm[i].mkey = htobe32(mkey);
+        klm[i].address = htobe64(reinterpret_cast<uint64_t>(iov[i].iov_base));
+    }
+    for (; i < ((iov_len + 3) & 0xfffffffcU); ++i) {
+        memset(&klm[i], 0, sizeof(klm[i]));
+    }
+
+    memset(mkc, 0, sizeof(*mkc));
+    mkc->status = 0;
+    mkc->len = htobe64(data_len);
+
+    // XXX Hardcode these values for now...
+    enum {
+        CRYPTO_BSF_SIZE_64B = 0x2,
+        CRYPTO_BSF_P_TYPE_CRYPTO = 0x1,
+        CRYPTO_BSF_ENCRYPTION_ORDER_ENCRYPTED_MEMORY_SIGNATURE = 0x1,
+        CRYPTO_BSF_ENCRYPTION_STANDARD_AES_XTS = 0x0,
+        CRYPTO_BSF_CRYPTO_BLOCK_SIZE_POINTER_512 = 0x1,
+        CRYPTO_BSF_CRYPTO_BLOCK_SIZE_POINTER_4096 = 0x3,
+    };
+
+    memset(bsf, 0, sizeof(*bsf));
+    bsf->size_type = (CRYPTO_BSF_SIZE_64B << 6) | CRYPTO_BSF_P_TYPE_CRYPTO,
+    bsf->enc_order = CRYPTO_BSF_ENCRYPTION_ORDER_ENCRYPTED_MEMORY_SIGNATURE,
+    bsf->enc_standard = CRYPTO_BSF_ENCRYPTION_STANDARD_AES_XTS,
+    bsf->raw_data_size = htobe32(data_len),
+    /* XXX Support only 512 and 4096 block sizes */
+        bsf->crypto_block_size_pointer = block_size == 512
+        ? CRYPTO_BSF_CRYPTO_BLOCK_SIZE_POINTER_512
+        : CRYPTO_BSF_CRYPTO_BLOCK_SIZE_POINTER_4096,
+    bsf->dek_pointer = htobe32(dek & 0x00FFFFFF), bsf->xts_initial_tweak[0] = htobe64(lba);
+    bsf->xts_initial_tweak[1] = 0;
+
+    store_current_wqe_prop(nullptr, SQ_CREDITS_UMR_CRYPTO_MKEY, nullptr);
+    m_b_fence_needed = false; // don't fence subsequent UMR WQEs
+    ring_doorbell(MLX5_DB_METHOD_DB, wqebbs, wqebbs_top, true);
+    update_next_wqe_hot();
+    m_b_fence_needed = true;
+}
+
 void hw_queue_tx::post_nop_fence(void)
 {
     struct mlx5_wqe *wqe = reinterpret_cast<struct mlx5_wqe *>(m_sq_wqe_hot);

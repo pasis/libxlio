@@ -235,6 +235,21 @@ public:
     };
 
     virtual int get_supported_nvme_feature_mask() const { return 0; }
+
+    virtual dpcp::crypto_mkey *get_crypto_mkey() { return nullptr; }
+
+    virtual void setup_crypto_mkey(uint32_t cmkey_id, const struct iovec *iov, unsigned iov_len,
+                                   uint32_t mkey, uint32_t dek, uint64_t lba, unsigned block_size)
+    {
+        NOT_IN_USE(cmkey_id);
+        NOT_IN_USE(iov);
+        NOT_IN_USE(iov_len);
+        NOT_IN_USE(mkey);
+        NOT_IN_USE(dek);
+        NOT_IN_USE(lba);
+        NOT_IN_USE(block_size);
+    }
+
     virtual void post_nop_fence(void) {}
     virtual void post_dump_wqe(xlio_tis *tis, void *addr, uint32_t len, uint32_t lkey, bool first)
     {

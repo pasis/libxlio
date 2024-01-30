@@ -60,6 +60,7 @@ enum {
     SQ_CREDITS_TLS_RX_CONTEXT = SQ_CREDITS_UMR + SQ_CREDITS_SET_PSV,
     SQ_CREDITS_TLS_RX_RESYNC = SQ_CREDITS_UMR,
     SQ_CREDITS_TLS_RX_GET_PSV = SQ_CREDITS_GET_PSV,
+    SQ_CREDITS_UMR_CRYPTO_MKEY = 4U,
 };
 
 /* WQE properties description. */
@@ -146,6 +147,9 @@ public:
     std::unique_ptr<dpcp::tls_dek> get_tls_dek(const void *key, uint32_t key_size_bytes);
     void put_tls_dek(std::unique_ptr<dpcp::tls_dek> &&dek_obj);
 #endif
+
+    void setup_crypto_mkey(uint32_t cmkey_id, const struct iovec *iov, unsigned iov_len,
+                           uint32_t mkey, uint32_t dek, uint64_t lba, unsigned block_size);
 
     void reset_inflight_zc_buffers_ctx(void *ctx);
 

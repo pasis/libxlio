@@ -91,6 +91,7 @@ enum tcp_conn_state_e {
 
 enum xlio_express_flags : uint32_t {
     XLIO_EXPRESS_FLAG_MSG_MORE = XLIO_IO_FLAG_MSG_MORE,
+    XLIO_EXPRESS_FLAG_CRYPTO = XLIO_IO_FLAG_CRYPTO,
     XLIO_EXPRESS_FLAG_MDESC = 1U << 8,
 };
 
@@ -343,6 +344,7 @@ public:
         return sockinfo::register_callback(callback, context);
     }
 
+    unsigned io_get_block_size() { return m_io_block_size; }
     int io_key_create(const struct xlio_io_key_attr *attr, xlio_io_key_t *out);
     int tcp_tx_express(const struct iovec *iov, unsigned iov_len, uint32_t mkey,
                        xlio_express_flags flags, void *opaque_op);
@@ -588,6 +590,7 @@ private:
 
     void *m_timer_handle;
     uintptr_t m_userdata = 0;
+    unsigned m_io_block_size = 512;
     multilock m_tcp_con_lock;
 
     // used for reporting 'connected' on second non-blocking call to connect or
