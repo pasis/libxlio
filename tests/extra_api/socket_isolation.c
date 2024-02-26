@@ -30,8 +30,12 @@
  * SOFTWARE.
  */
 
+/* gcc -pthread tests/extra_api/socket_isolation.c -o socket_isolation_test */
+
 #include <assert.h>
 #include <errno.h>
+#include <fcntl.h>
+#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -42,6 +46,9 @@
 
 #include <mellanox/xlio_extra.h>
 
+#define THREADS_NR 5
+#define FAKE_PORT 65535
+
 #ifndef ARRAY_SIZE
 #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof(arr[0]))
 #endif /* ARRAY_SIZE */
@@ -49,8 +56,11 @@
 #define HELLO_MSG "Hello"
 
 static struct xlio_api_t *xlio_api = NULL;
+static char *client_ip;
+static char *server_ip;
+static unsigned short base_port = 8080;
 
-static void server(const char *server_ip)
+static void server()
 {
     char buf[64];
     struct sockaddr_in addr;
@@ -84,16 +94,16 @@ static void server(const char *server_ip)
     memset(&addr, 0, sizeof(addr));
     addr.sin_family = AF_INET;
     addr.sin_addr.s_addr = inet_addr(server_ip);
-    addr.sin_port = htons(8080);
+    addr.sin_port = htons(base_port);
 
     rc = bind(sock, (struct sockaddr *)&addr, sizeof(addr));
     assert(rc == 0);
 
-    addr.sin_port = htons(8081);
+    addr.sin_port = htons(base_port + 1);
     rc = bind(sock2, (struct sockaddr *)&addr, sizeof(addr));
     assert(rc == 0);
 
-    addr.sin_port = htons(8082);
+    addr.sin_port = htons(base_port + 2);
     rc = bind(sock3, (struct sockaddr *)&addr, sizeof(addr));
     assert(rc == 0);
 
@@ -179,7 +189,7 @@ static void server(const char *server_ip)
     assert(rc == 0);
 }
 
-static void client(const char *server_ip)
+static void client()
 {
     char buf[64];
     struct sockaddr_in addr;
@@ -201,15 +211,25 @@ static void client(const char *server_ip)
     assert(rc == -1);
     assert(errno == EINVAL);
 
+    if (client_ip) {
+        memset(&addr, 0, sizeof(addr));
+        addr.sin_family = AF_INET;
+        addr.sin_addr.s_addr = inet_addr(client_ip);
+        rc = bind(sock, (struct sockaddr *)&addr, sizeof(addr));
+        assert(rc == 0);
+        rc = bind(sock2, (struct sockaddr *)&addr, sizeof(addr));
+        assert(rc == 0);
+    }
+
     memset(&addr, 0, sizeof(addr));
     addr.sin_family = AF_INET;
     addr.sin_addr.s_addr = inet_addr(server_ip);
-    addr.sin_port = htons(8080);
+    addr.sin_port = htons(base_port);
 
     rc = connect(sock, (struct sockaddr *)&addr, sizeof(addr));
     assert(rc == 0);
 
-    addr.sin_port = htons(8081);
+    addr.sin_port = htons(base_port + 1);
     rc = connect(sock2, (struct sockaddr *)&addr, sizeof(addr));
     assert(rc == 0);
 
@@ -243,12 +263,78 @@ static void client(const char *server_ip)
     assert(rc == 0);
 }
 
+static int mt_ring_fds[THREADS_NR];
+
+static void *thread_func(void *arg)
+{
+    uint64_t id = (uint64_t)arg;
+    struct sockaddr_in addr;
+    int rc;
+
+    int sock = socket(AF_INET, SOCK_STREAM, 0);
+    assert(sock >= 0);
+
+    int val = SO_XLIO_ISOLATE_SAFE;
+    rc = setsockopt(sock, SOL_SOCKET, SO_XLIO_ISOLATE, &val, sizeof(val));
+    assert(rc == 0);
+
+    val = O_NONBLOCK;
+    rc = fcntl(sock, F_SETFL, val);
+    assert(rc == 0);
+
+    if (client_ip) {
+        memset(&addr, 0, sizeof(addr));
+        addr.sin_family = AF_INET;
+        addr.sin_addr.s_addr = inet_addr(client_ip);
+        rc = bind(sock, (struct sockaddr *)&addr, sizeof(addr));
+        assert(rc == 0);
+    }
+
+    memset(&addr, 0, sizeof(addr));
+    addr.sin_family = AF_INET;
+    addr.sin_addr.s_addr = inet_addr(server_ip);
+    addr.sin_port = htons(FAKE_PORT);
+
+    /* connect() is non blocking and then expected to fail with ECONNREFUSED or ETIMEDOUT. */
+    (void)connect(sock, (struct sockaddr *)&addr, sizeof(addr));
+
+    int xlio_ring_fds[3];
+    rc = xlio_api->get_socket_rings_fds(sock, xlio_ring_fds, ARRAY_SIZE(xlio_ring_fds));
+    assert(rc == 1);
+    mt_ring_fds[id] = xlio_ring_fds[0];
+
+    close(sock);
+
+    return NULL;
+}
+
+static void client_mt()
+{
+    pthread_t tid[THREADS_NR] = {};
+    int rc;
+
+    for (uint64_t i = 0; i < THREADS_NR; ++i) {
+        rc = pthread_create(&tid[i], NULL, &thread_func, (void *)i);
+        assert(rc == 0);
+    }
+
+    /* There is no POSIX interface to decrement by >1, so run a loop. */
+    for (int i = 0; i < THREADS_NR; ++i) {
+        rc = pthread_join(tid[i], NULL);
+        assert(rc == 0);
+    }
+    for (int i = 1; i < THREADS_NR; ++i) {
+        assert(mt_ring_fds[i] == mt_ring_fds[0]);
+    }
+}
+
 static void usage(const char *name)
 {
-    printf("Usage: %s <-s|-c> <server-ip>\n", name);
-    printf(" -s         server mode\n");
-    printf(" -c         client mode\n");
+    printf("Usage: %s <-s|-c> [client-ip,]<server-ip>\n", name);
+    printf(" -s         Server mode\n");
+    printf(" -c         Client mode\n");
     printf(" server-ip  IPv4 address to listen/connect to\n");
+    printf(" client-ip  Optional IPv4 address to bind on client side\n");
     exit(1);
 }
 
@@ -264,10 +350,21 @@ int main(int argc, char **argv)
         return 1;
     }
 
+    char *ptr = strchr(argv[2], ',');
+    if (ptr) {
+        server_ip = ptr + 1;
+        client_ip = argv[2];
+        *ptr = '\0';
+    } else {
+        server_ip = argv[2];
+        client_ip = NULL;
+    }
+
     if (strcmp(argv[1], "-s") == 0) {
-        server(argv[2]);
+        server();
     } else if (strcmp(argv[1], "-c") == 0) {
-        client(argv[2]);
+        client_mt();
+        client();
     } else {
         usage(argv[0]);
     }
