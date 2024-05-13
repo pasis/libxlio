@@ -63,18 +63,21 @@ public:
     void set_memory_descriptor(iovec &mem_desc);
     void set_user_id_key(uint64_t user_id_key);
     void set_use_locks(bool use_locks);
+    void set_origin_thread(uint64_t t) { m_origin_thread = t; }
     const std::string to_str() const;
     inline ring_logic_t get_ring_alloc_logic() { return m_ring_alloc_logic; }
     inline iovec *get_memory_descriptor() { return &m_mem_desc; }
     inline uint64_t get_user_id_key() { return m_user_id_key; }
     inline bool get_use_locks() { return m_use_locks; }
+    inline uint64_t get_origin_thread() { return m_origin_thread; }
 
     bool operator==(const ring_alloc_logic_attr &other) const
     {
         return (m_ring_alloc_logic == other.m_ring_alloc_logic &&
                 m_user_id_key == other.m_user_id_key &&
                 m_mem_desc.iov_base == other.m_mem_desc.iov_base &&
-                m_mem_desc.iov_len == other.m_mem_desc.iov_len && m_use_locks == other.m_use_locks);
+                m_mem_desc.iov_len == other.m_mem_desc.iov_len &&
+                m_use_locks == other.m_use_locks && m_origin_thread == other.m_origin_thread);
     }
 
     bool operator!=(const ring_alloc_logic_attr &other) const { return !(*this == other); }
@@ -88,6 +91,7 @@ public:
             m_mem_desc.iov_base = other.m_mem_desc.iov_base;
             m_mem_desc.iov_len = other.m_mem_desc.iov_len;
             m_use_locks = other.m_use_locks;
+            m_origin_thread = other.m_origin_thread;
         }
         return *this;
     }
@@ -105,6 +109,7 @@ private:
     ring_logic_t m_ring_alloc_logic;
     /* either user_idx or key as defined in ring_logic_t */
     uint64_t m_user_id_key;
+    uint64_t m_origin_thread;
     iovec m_mem_desc;
     bool m_use_locks;
     void init();

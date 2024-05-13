@@ -82,6 +82,7 @@ static inline bool is_ring_logic_valid(ring_logic_t logic)
     case RING_LOGIC_PER_IP:
     case RING_LOGIC_PER_SOCKET:
     case RING_LOGIC_PER_THREAD:
+    case RING_LOGIC_PER_LISTEN_THREAD:
     case RING_LOGIC_PER_CORE:
     case RING_LOGIC_PER_CORE_ATTACH_THREADS:
         return true;
@@ -101,6 +102,8 @@ static inline const char *ring_logic_str(ring_logic_t logic)
         return "(Ring per socket)";
     case RING_LOGIC_PER_THREAD:
         return "(Ring per thread)";
+    case RING_LOGIC_PER_LISTEN_THREAD:
+        return "(Ring per listen thread)";
     case RING_LOGIC_PER_CORE:
         return "(Ring per core)";
     case RING_LOGIC_PER_CORE_ATTACH_THREADS:

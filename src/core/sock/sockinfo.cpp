@@ -310,20 +310,27 @@ int sockinfo::set_ring_attr_helper(ring_alloc_logic_attr *sock_attr,
     return 0;
 }
 
-void sockinfo::set_ring_logic_rx(ring_alloc_logic_attr ral)
+void sockinfo::set_ring_logic_rx(ring_alloc_logic_attr ral, uint64_t origin_thread)
 {
     if (m_rx_ring_map.empty()) {
         m_ring_alloc_log_rx = ral;
+        if (m_ring_alloc_log_rx.get_ring_alloc_logic() == RING_LOGIC_PER_LISTEN_THREAD) {
+            si_logdbg("setting origin_thread=%lx", origin_thread);
+            m_ring_alloc_log_rx.set_origin_thread(origin_thread);
+        }
         m_ring_alloc_logic_rx = ring_allocation_logic_rx(get_fd(), m_ring_alloc_log_rx, this);
         m_p_socket_stats->ring_alloc_logic_rx = m_ring_alloc_log_rx.get_ring_alloc_logic();
         m_p_socket_stats->ring_user_id_rx = m_ring_alloc_logic_rx.calc_res_key_by_logic();
     }
 }
 
-void sockinfo::set_ring_logic_tx(ring_alloc_logic_attr ral)
+void sockinfo::set_ring_logic_tx(ring_alloc_logic_attr ral, uint64_t origin_thread)
 {
     if (!m_p_connected_dst_entry) {
         m_ring_alloc_log_tx = ral;
+        if (m_ring_alloc_log_tx.get_ring_alloc_logic() == RING_LOGIC_PER_LISTEN_THREAD) {
+            m_ring_alloc_log_tx.set_origin_thread(origin_thread);
+        }
         m_p_socket_stats->ring_alloc_logic_tx = m_ring_alloc_log_tx.get_ring_alloc_logic();
         m_p_socket_stats->ring_user_id_tx =
             ring_allocation_logic_tx(get_fd(), m_ring_alloc_log_tx, this).calc_res_key_by_logic();

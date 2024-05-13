@@ -592,6 +592,8 @@ private:
     // stats
     uint64_t m_n_pbufs_rcvd;
     uint64_t m_n_pbufs_freed;
+
+    uint64_t m_origin_thread;
 };
 typedef struct tcp_seg tcp_seg;
 
