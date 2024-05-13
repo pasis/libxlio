@@ -74,6 +74,7 @@ ring_alloc_logic_attr::ring_alloc_logic_attr()
     : m_ring_alloc_logic(RING_LOGIC_PER_INTERFACE)
     , m_use_locks(true)
     , m_user_id_key(0)
+    , m_origin_thread(0)
 {
     init();
 }
@@ -82,6 +83,7 @@ ring_alloc_logic_attr::ring_alloc_logic_attr(ring_logic_t ring_logic, bool use_l
     : m_ring_alloc_logic(ring_logic)
     , m_use_locks(use_locks)
     , m_user_id_key(0)
+    , m_origin_thread(0)
 {
     init();
 }
@@ -91,6 +93,7 @@ ring_alloc_logic_attr::ring_alloc_logic_attr(const ring_alloc_logic_attr &other)
     , m_ring_alloc_logic(other.m_ring_alloc_logic)
     , m_use_locks(other.m_use_locks)
     , m_user_id_key(other.m_user_id_key)
+    , m_origin_thread(other.m_origin_thread)
 {
 }
 

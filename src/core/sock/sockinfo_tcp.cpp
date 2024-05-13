@@ -303,6 +303,8 @@ sockinfo_tcp::sockinfo_tcp(int fd, int domain)
     m_ops = m_ops_tcp = new sockinfo_tcp_ops(this);
     assert(m_ops != NULL); /* XXX */
 
+    m_origin_thread = pthread_self();
+
     m_b_incoming = false;
     m_b_attached = false; // For socket reuse
 
@@ -3301,11 +3303,13 @@ sockinfo_tcp *sockinfo_tcp::accept_clone()
     si->setPassthrough(false);
 
     // Inherit parent ring allocation logic
-    if (si->m_ring_alloc_log_rx != m_ring_alloc_log_rx) {
-        si->set_ring_logic_rx(m_ring_alloc_log_rx);
+    if (si->m_ring_alloc_log_rx != m_ring_alloc_log_rx ||
+        m_ring_alloc_log_rx.get_ring_alloc_logic() == RING_LOGIC_PER_LISTEN_THREAD) {
+        si->set_ring_logic_rx(m_ring_alloc_log_rx, m_origin_thread);
     }
-    if (si->m_ring_alloc_log_tx != m_ring_alloc_log_tx) {
-        si->set_ring_logic_tx(m_ring_alloc_log_tx);
+    if (si->m_ring_alloc_log_tx != m_ring_alloc_log_tx ||
+        m_ring_alloc_log_tx.get_ring_alloc_logic() == RING_LOGIC_PER_LISTEN_THREAD) {
+        si->set_ring_logic_tx(m_ring_alloc_log_tx, m_origin_thread);
     }
 
     if (tcp_ctl_thread_on(m_sysvar_tcp_ctl_thread)) {
@@ -4683,8 +4687,8 @@ int sockinfo_tcp::tcp_setsockopt(int __level, int __optname, __const void *__opt
                         !ring_isolated) {
                         m_tcp_con_lock = multilock::create_new_lock(MULTILOCK_RECURSIVE, "tcp_con");
                     }
-                    set_ring_logic_rx(ring_alloc_logic_attr(RING_LOGIC_ISOLATE, true));
-                    set_ring_logic_tx(ring_alloc_logic_attr(RING_LOGIC_ISOLATE, true));
+                    set_ring_logic_rx(ring_alloc_logic_attr(RING_LOGIC_ISOLATE, true), 0);
+                    set_ring_logic_tx(ring_alloc_logic_attr(RING_LOGIC_ISOLATE, true), 0);
                     break;
                 }
             }

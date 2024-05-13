@@ -97,6 +97,15 @@ uint64_t ring_allocation_logic::calc_res_key_by_logic()
     case RING_LOGIC_PER_THREAD:
         res_key = pthread_self();
         break;
+    case RING_LOGIC_PER_LISTEN_THREAD:
+        res_key = m_res_key.get_origin_thread();
+        if (!res_key) {
+            ral_logdbg("ring-per-listen-thread: listen or connect");
+            res_key = pthread_self();
+        } else {
+            ral_logdbg("ring-per-listen-thread: incoming");
+        }
+        break;
     case RING_LOGIC_PER_CORE:
     case RING_LOGIC_PER_CORE_ATTACH_THREADS:
         res_key = sched_getcpu();

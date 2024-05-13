@@ -430,8 +430,8 @@ protected:
     void do_rings_migration_rx(resource_allocation_key &old_key);
     int set_ring_attr(xlio_ring_alloc_logic_attr *attr);
     int set_ring_attr_helper(ring_alloc_logic_attr *sock_attr, xlio_ring_alloc_logic_attr *attr);
-    void set_ring_logic_rx(ring_alloc_logic_attr ral);
-    void set_ring_logic_tx(ring_alloc_logic_attr ral);
+    void set_ring_logic_rx(ring_alloc_logic_attr ral, uint64_t origin_thread);
+    void set_ring_logic_tx(ring_alloc_logic_attr ral, uint64_t origin_thread);
     void shutdown_rx();
     int modify_ratelimit(dst_entry *p_dst_entry, struct xlio_rate_limit_t &rate_limit);
     void move_descs(ring *p_ring, descq_t *toq, descq_t *fromq, bool own);

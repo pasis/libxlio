@@ -694,6 +694,8 @@ private:
     bool m_b_xlio_socket_dirty = false;
     uintptr_t m_xlio_socket_userdata = 0;
     poll_group *m_p_group = nullptr;
+
+    uint64_t m_origin_thread;
 };
 
 #endif
