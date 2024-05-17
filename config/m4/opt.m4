@@ -82,5 +82,5 @@ AC_MSG_RESULT([$enableval])
 # - For scenario w/o TX ZEROCOPY forcing this is not mandatory but
 #   can impact on final performance.
 #
-AC_DEFINE_UNQUOTED([DEFINED_FORCE_TX_POLLING], [1], [Define to 1 to force TX Polling])
+AC_DEFINE_UNQUOTED([DEFINED_FORCE_TX_POLLING], [0], [Define to 1 to force TX Polling])
 ])

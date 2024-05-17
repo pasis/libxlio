@@ -59,7 +59,7 @@ epfd_info::epfd_info(int epfd, int size)
     , m_epfd(epfd)
     , m_size(size)
     , m_ring_map_lock("epfd_ring_map_lock")
-    , m_lock_poll_os(MULTILOCK_NON_RECURSIVE, "epfd_lock_poll_os")
+    , m_lock_poll_os(/*MULTILOCK_NON_RECURSIVE,*/ "epfd_lock_poll_os")
     , m_sysvar_thread_mode(safe_mce_sys().thread_mode)
     , m_b_os_data_available(false)
 {
@@ -638,7 +638,8 @@ int epfd_info::ring_poll_and_process_element(uint64_t *p_poll_sn,
             __log_func("ring[%p] RX Returned with: %d (sn=%d)", iter->first, ret, *p_poll_sn);
             ret_total += ret;
         }
-#if defined(DEFINED_FORCE_TX_POLLING)
+#if (DEFINED_FORCE_TX_POLLING)
+#error TX polling
         ret = iter->first->poll_and_process_element_tx(p_poll_sn);
         BULLSEYE_EXCLUDE_BLOCK_START
         if (ret < 0 && errno != EAGAIN) {

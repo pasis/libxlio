@@ -54,6 +54,7 @@
     __func_and_params__;                                                                           \
     __lock__.unlock();
 
+#if 0
 #define RING_TRY_LOCK_RUN_AND_UPDATE_RET(__lock__, __func_and_params__)                            \
     if (!__lock__.trylock()) {                                                                     \
         ret = __func_and_params__;                                                                 \
@@ -61,6 +62,12 @@
     } else {                                                                                       \
         errno = EAGAIN;                                                                            \
     }
+#else
+#define RING_TRY_LOCK_RUN_AND_UPDATE_RET(__lock__, __func_and_params__)                            \
+    __lock__.lock();                                                                               \
+    ret = __func_and_params__;                                                                     \
+    __lock__.unlock();
+#endif
 
 /**/
 /** inlining functions can only help if they are implemented before their usage **/
