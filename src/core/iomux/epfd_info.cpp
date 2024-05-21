@@ -89,9 +89,11 @@ epfd_info::epfd_info(int epfd, int size)
 
     xlio_stats_instance_create_epoll_block(m_epfd, &(m_stats->stats));
 
+#if 0
     // Register this socket to read nonoffloaded data
     g_p_event_handler_manager->update_epfd(m_epfd, EPOLL_CTL_ADD,
                                            EPOLLIN | EPOLLPRI | EPOLLONESHOT);
+#endif
 
     wakeup_set_epoll_fd(m_epfd);
 }
@@ -133,8 +135,10 @@ epfd_info::~epfd_info()
         BULLSEYE_EXCLUDE_BLOCK_END
     }
 
+#if 0
     g_p_event_handler_manager->update_epfd(m_epfd, EPOLL_CTL_DEL,
                                            EPOLLIN | EPOLLPRI | EPOLLONESHOT);
+#endif
 
     unlock();
 
@@ -864,9 +868,11 @@ void epfd_info::register_to_internal_thread()
     std::lock_guard<decltype(m_lock_poll_os)> locker(m_lock_poll_os);
     m_b_os_data_available = false;
 
+#if 0
     // Reassign EPOLLIN event
     g_p_event_handler_manager->update_epfd(m_epfd, EPOLL_CTL_MOD,
                                            EPOLLIN | EPOLLPRI | EPOLLONESHOT);
+#endif
 }
 
 bool epfd_info::get_and_unset_os_data_available()
