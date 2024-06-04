@@ -563,6 +563,8 @@ static inline bool check_rx_packet(sockinfo *si, mem_buf_desc_t *p_rx_wc_buf_des
     return si->rx_input_cb(p_rx_wc_buf_desc, fd_ready_array);
 }
 
+extern sockinfo *g_xlio_socket_collection[1024 * 1024];
+
 // All CQ wce come here for some basic sanity checks and then are distributed to the correct ring
 // handler Return values: false = Reuse this data buffer & mem_buf_desc
 bool ring_slave::rx_process_buffer(mem_buf_desc_t *p_rx_wc_buf_desc, void *pv_fd_ready_array)
@@ -599,8 +601,7 @@ bool ring_slave::rx_process_buffer(mem_buf_desc_t *p_rx_wc_buf_desc, void *pv_fd
         // trying to get sockinfo per flow_tag_id-1 as it was incremented at attach
         // to allow mapping sockfd=0
         assert(g_p_fd_collection);
-        si = static_cast<sockinfo *>(
-            g_p_fd_collection->get_sockfd(p_rx_wc_buf_desc->rx.flow_tag_id - 1));
+        si = g_xlio_socket_collection[p_rx_wc_buf_desc->rx.flow_tag_id - 1];
 
         if (likely(si)) {
             // will process packets with set flow_tag_id and enabled for the socket

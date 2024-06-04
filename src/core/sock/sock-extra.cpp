@@ -461,6 +461,8 @@ extern "C" void xlio_poll_group_poll(xlio_poll_group_t group)
     grp->poll();
 }
 
+sockinfo *g_xlio_socket_collection[1024 * 1024] = {};
+
 extern "C" int xlio_socket_create(const struct xlio_socket_attr *attr, xlio_socket_t *sock_out)
 {
     // Validate input arguments
@@ -485,6 +487,8 @@ extern "C" int xlio_socket_create(const struct xlio_socket_attr *attr, xlio_sock
     poll_group *grp = reinterpret_cast<poll_group *>(attr->group);
     grp->add_socket(si);
 
+    g_xlio_socket_collection[fd] = si;
+
     *sock_out = reinterpret_cast<xlio_socket_t>(si);
     return 0;
 }
@@ -493,6 +497,8 @@ extern "C" int xlio_socket_destroy(xlio_socket_t sock)
 {
     sockinfo_tcp *si = reinterpret_cast<sockinfo_tcp *>(sock);
     poll_group *grp = si->get_poll_group();
+
+    g_xlio_socket_collection[si->get_fd()] = nullptr;
 
     if (likely(grp)) {
         // We always force TCP reset not to handle FIN handshake and TIME-WAIT state.
