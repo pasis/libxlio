@@ -536,6 +536,9 @@ inline void hw_queue_tx::ring_doorbell(int num_wqebb, bool skip_comp /*=false*/)
     uint64_t *src = reinterpret_cast<uint64_t *>(m_sq_wqe_hot);
     struct xlio_mlx5_wqe_ctrl_seg *ctrl = reinterpret_cast<struct xlio_mlx5_wqe_ctrl_seg *>(src);
 
+    NOT_IN_USE(skip_comp);
+
+#if 0
     /* TODO Refactor m_n_unsignedled_count, is_completion_need(), set_unsignaled_count():
      * Some logic is hidden inside the methods and in one branch the field is changed directly.
      */
@@ -547,12 +550,22 @@ inline void hw_queue_tx::ring_doorbell(int num_wqebb, bool skip_comp /*=false*/)
     } else {
         dec_unsignaled_count();
     }
+#endif
     if (unlikely(m_b_fence_needed)) {
         ctrl->fm_ce_se |= MLX5_FENCE_MODE_INITIATOR_SMALL;
         m_b_fence_needed = false;
     }
 
     m_sq_wqe_counter = (m_sq_wqe_counter + num_wqebb) & 0xFFFF;
+
+    ++m_db_counter;
+    if (m_db_counter < 64) {
+        m_b_deferred_doorbell = true;
+        m_last_wqe = src;
+    }
+    m_db_counter = 0;
+    m_b_deferred_doorbell = false;
+    ctrl->fm_ce_se |= MLX5_WQE_CTRL_CQ_UPDATE;
 
     // Make sure that descriptors are written before
     // updating doorbell record and ringing the doorbell
@@ -843,6 +856,8 @@ void hw_queue_tx::send_to_wire(xlio_ibv_send_wr *p_send_wqe, xlio_wr_tx_packet_a
     struct mlx5_wqe_eth_seg *eseg = nullptr;
     uint32_t tisn = tis ? tis->get_tisn() : 0;
 
+    NOT_IN_USE(request_comp);
+
     ctrl = (struct xlio_mlx5_wqe_ctrl_seg *)m_sq_wqe_hot;
     eseg = (struct mlx5_wqe_eth_seg *)((uint8_t *)m_sq_wqe_hot + sizeof(*ctrl));
 
@@ -852,7 +867,7 @@ void hw_queue_tx::send_to_wire(xlio_ibv_send_wr *p_send_wqe, xlio_wr_tx_packet_a
     ctrl->opmod_idx_opcode = htonl(((m_sq_wqe_counter & 0xffff) << 8) |
                                    (get_mlx5_opcode(xlio_send_wr_opcode(*p_send_wqe)) & 0xff));
     m_sq_wqe_hot->ctrl.data[2] = 0;
-    ctrl->fm_ce_se = (request_comp ? (uint8_t)MLX5_WQE_CTRL_CQ_UPDATE : 0);
+    ctrl->fm_ce_se = 0;//(request_comp ? (uint8_t)MLX5_WQE_CTRL_CQ_UPDATE : 0);
     ctrl->tis_tir_num = htobe32(tisn << 8);
 
     /* Configure eth segment

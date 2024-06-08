@@ -69,6 +69,11 @@ public:
     int poll_and_process_element_rx(uint64_t *p_cq_poll_sn,
                                     void *pv_fd_ready_array = nullptr) override;
     int poll_and_process_element_tx(uint64_t *p_cq_poll_sn) override;
+    void ring_delayed_doorbell() override
+    {
+        std::lock_guard<decltype(m_lock_ring_tx)> lock(m_lock_ring_tx);
+        m_hqtx->ring_delayed_doorbell();
+    }
     void adapt_cq_moderation() override;
     bool reclaim_recv_buffers(descq_t *rx_reuse) override;
     bool reclaim_recv_buffers(mem_buf_desc_t *rx_reuse_lst) override;

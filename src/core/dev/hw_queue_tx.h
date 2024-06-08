@@ -90,6 +90,22 @@ public:
 
     void send_wqe(xlio_ibv_send_wr *p_send_wqe, xlio_wr_tx_packet_attr attr, xlio_tis *tis,
                   unsigned credits);
+    void ring_delayed_doorbell()
+    {
+        if (m_b_deferred_doorbell) {
+            struct xlio_mlx5_wqe_ctrl_seg *ctrl = reinterpret_cast<struct xlio_mlx5_wqe_ctrl_seg *>(m_last_wqe);
+            ctrl->fm_ce_se |= MLX5_WQE_CTRL_CQ_UPDATE;
+
+            wmb();
+            *m_mlx5_qp.sq.dbrec = htonl(m_sq_wqe_counter);
+            wc_wmb();
+            *(uint64_t *)m_mlx5_qp.bf.reg = *m_last_wqe;
+            wc_wmb();
+
+            m_b_deferred_doorbell = false;
+            m_db_counter = 0;
+        }
+    }
 
     struct ibv_qp *get_ibv_qp() const { return m_mlx5_qp.qp; };
 
@@ -286,10 +302,13 @@ private:
     uint32_t m_n_unsignaled_count = 0U;
     int m_sq_wqe_hot_index = 0;
     uint16_t m_sq_wqe_counter = 0U;
+    uint16_t m_db_counter = 0;
     uint8_t m_port_num;
     bool m_b_fence_needed = false;
+    bool m_b_deferred_doorbell = false; // redundant (the same as m_db_counter != 0)
     bool m_dm_enabled = false;
     bool m_hw_dummy_send_support = false;
+    uint64_t *m_last_wqe = nullptr;
     dm_mgr m_dm_mgr;
 
     // TIS cache. Protected by ring tx lock. TODO Move to ring.
