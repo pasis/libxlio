@@ -287,8 +287,8 @@ struct tcp_pcb {
     u32_t rcv_ann_right_edge; /* announced right edge of window */
 
     /* Timers */
-    u8_t tcp_timer; /* Timer counter to handle calling slow-timer from tcp_tmr() */
     u32_t tmr;
+    u8_t tcp_timer; /* Timer counter to handle calling slow-timer from tcp_tmr() */
 
     /* Retransmission timer. */
     s16_t rtime;
@@ -310,8 +310,8 @@ struct tcp_pcb {
     u8_t nrtx; /* number of retransmissions */
 
     /* fast retransmit/recovery */
-    u32_t lastack; /* Highest acknowledged seqno. */
     u8_t dupacks;
+    u32_t lastack; /* Highest acknowledged seqno. */
 
     /* congestion avoidance/control variables */
 #if TCP_CC_ALGO_MOD
@@ -329,6 +329,7 @@ struct tcp_pcb {
                                window update. */
 
     u32_t snd_lbb; /* Sequence number of next byte to be buffered. */
+    u32_t snd_stop; /* Sequence number where TX must be stopped to achieve aggregation. */
 
     u32_t acked;
 

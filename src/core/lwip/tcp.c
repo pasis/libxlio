@@ -543,6 +543,7 @@ err_t tcp_connect(struct tcp_pcb *pcb, const ip_addr_t *ipaddr, u16_t port, bool
     pcb->lastack = iss;
     pcb->snd_wl2 = iss;
     pcb->snd_lbb = iss;
+    pcb->snd_stop = iss;
     pcb->rcv_ann_right_edge = pcb->rcv_nxt;
     pcb->snd_wnd = TCP_WND;
 
@@ -951,6 +952,7 @@ void tcp_pcb_init(struct tcp_pcb *pcb, u8_t prio, void *container)
     pcb->snd_nxt = iss;
     pcb->lastack = iss;
     pcb->snd_lbb = iss;
+    pcb->snd_stop = iss;
     pcb->tmr = tcp_ticks;
     pcb->snd_sml_snt = 0;
     pcb->snd_sml_add = 0;
@@ -1003,6 +1005,7 @@ void tcp_pcb_recycle(struct tcp_pcb *pcb)
     pcb->snd_nxt = iss;
     pcb->lastack = iss;
     pcb->snd_lbb = iss;
+    pcb->snd_stop = iss;
     pcb->tmr = tcp_ticks;
     pcb->snd_sml_snt = 0;
     pcb->snd_sml_add = 0;

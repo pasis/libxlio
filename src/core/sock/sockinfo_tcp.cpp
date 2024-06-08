@@ -1140,6 +1140,7 @@ ssize_t sockinfo_tcp::tcp_tx(xlio_tx_call_attr_t &tx_arg)
 
             const struct iovec iov = {.iov_base = tx_ptr, .iov_len = tx_size};
             err = tcp_write_express(&m_pcb, &iov, 1, &tx_arg.priv);
+            m_pcb.snd_stop = m_pcb.snd_lbb;
             if (unlikely(err != ERR_OK)) {
                 // tcp_write_express() can return only ERR_MEM error.
                 return tcp_tx_handle_partial_send_and_unlock(total_tx, EAGAIN, is_dummy,
@@ -1287,6 +1288,7 @@ ssize_t sockinfo_tcp::tcp_tx_slow_path(xlio_tx_call_attr_t &tx_arg)
                 } else {
                     err = tcp_write(&m_pcb, tx_ptr, tx_size, apiflags, &tx_arg.priv);
                 }
+                m_pcb.snd_stop = m_pcb.snd_lbb;
                 if (unlikely(err != ERR_OK)) {
                     if (unlikely(err == ERR_CONN)) { // happens when remote drops during big write
                         si_tcp_logdbg("connection closed: tx'ed = %d", total_tx);
@@ -6195,6 +6197,7 @@ int sockinfo_tcp::tcp_tx_express(const struct iovec *iov, unsigned iov_len, uint
         return tcp_tx_handle_errno_and_unlock(ENOMEM);
     }
     if (!(flags & XLIO_EXPRESS_MSG_MORE)) {
+        m_pcb.snd_stop = m_pcb.snd_lbb;
         tcp_output(&m_pcb);
         m_b_xlio_socket_dirty = false;
     } else if (m_p_group && !m_b_xlio_socket_dirty) {
@@ -6234,6 +6237,7 @@ int sockinfo_tcp::tcp_tx_express_inline(const struct iovec *iov, unsigned iov_le
     }
     if (!(flags & XLIO_EXPRESS_MSG_MORE)) {
         m_b_xlio_socket_dirty = false;
+        m_pcb.snd_stop = m_pcb.snd_lbb;
         tcp_output(&m_pcb);
     } else if (m_p_group && !m_b_xlio_socket_dirty) {
         m_b_xlio_socket_dirty = true;
@@ -6249,6 +6253,7 @@ void sockinfo_tcp::flush()
 {
     lock_tcp_con();
     m_b_xlio_socket_dirty = false;
+    m_pcb.snd_stop = m_pcb.snd_lbb;
     tcp_output(&m_pcb);
     unlock_tcp_con();
 }

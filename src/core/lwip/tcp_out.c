@@ -984,6 +984,7 @@ err_t tcp_enqueue_flags(struct tcp_pcb *pcb, u8_t flags)
     /* SYN and FIN bump the sequence number */
     if (flags & (TCP_SYN | TCP_FIN)) {
         pcb->snd_lbb++;
+        pcb->snd_stop = pcb->snd_lbb;
         /* optlen does not influence snd_buf */
         pcb->snd_buf--;
     }
@@ -1802,6 +1803,10 @@ err_t tcp_output(struct tcp_pcb *pcb)
 #endif /* TCP_TSO_DEBUG */
 
     while (seg && rc == ERR_OK) {
+        if (TCP_SEQ_GEQ(seg->seqno, pcb->snd_stop)) {
+            break;
+        }
+
         /* TSO segment can be in unsent queue only in case of retransmission.
          * Clear TSO flag, tcp_split_segment() and tcp_tso_segment() will handle
          * all scenarios further.
