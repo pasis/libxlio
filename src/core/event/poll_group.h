@@ -35,6 +35,7 @@
 
 #include <memory>
 #include <vector>
+#include <pthread.h>
 
 #include "sock/fd_collection.h"
 #include "xlio.h"
@@ -67,10 +68,16 @@ public:
     event_handler_manager_local *get_event_handler() const { return m_event_handler.get(); }
     tcp_timers_collection *get_tcp_timers() const { return m_tcp_timers.get(); }
 
+    bool check_thread() {
+        return (m_group_flags & XLIO_GROUP_FLAG_SAFE) || (m_thread != pthread_self());
+    }
+
 public:
     xlio_socket_event_cb_t m_socket_event_cb;
     xlio_socket_comp_cb_t m_socket_comp_cb;
     xlio_socket_rx_cb_t m_socket_rx_cb;
+
+    pthread_t m_thread;
 
 private:
     std::vector<ring *> m_rings;

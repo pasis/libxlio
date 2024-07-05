@@ -3627,6 +3627,8 @@ err_t sockinfo_tcp::syn_received_timewait_cb(void *arg, struct tcp_pcb *newpcb)
     new_sock->m_last_zcdesc = nullptr;
     new_sock->m_b_zc = false;
 
+    new_sock->m_b_xlio_socket_dirty = false;
+
     new_sock->m_state = SOCKINFO_OPENED;
     new_sock->m_sock_state = TCP_SOCK_INITED;
     new_sock->m_conn_state = TCP_CONN_INIT;
@@ -6176,6 +6178,10 @@ int sockinfo_tcp::tcp_tx_express(const struct iovec *iov, unsigned iov_len, uint
 {
     pbuf_desc mdesc;
 
+    if (m_p_group && !m_p_group->check_thread()) {
+        si_tcp_logerr("Non native thread: expected=%lx current=%lx", m_p_group->m_thread, pthread_self());
+    }
+
     switch (flags & XLIO_EXPRESS_OP_TYPE_MASK) {
     case XLIO_EXPRESS_OP_TYPE_DESC:
         mdesc.attr = PBUF_DESC_EXPRESS;
@@ -6225,6 +6231,10 @@ int sockinfo_tcp::tcp_tx_express_inline(const struct iovec *iov, unsigned iov_le
     pbuf_desc mdesc;
     int bytes_written = 0;
 
+    if (m_p_group && !m_p_group->check_thread()) {
+        si_tcp_logerr("Non native thread: expected=%lx current=%lx", m_p_group->m_thread, pthread_self());
+    }
+
     memset(&mdesc, 0, sizeof(mdesc));
     mdesc.attr = PBUF_DESC_NONE;
 
@@ -6260,6 +6270,10 @@ int sockinfo_tcp::tcp_tx_express_inline(const struct iovec *iov, unsigned iov_le
 
 void sockinfo_tcp::flush()
 {
+    if (m_p_group && !m_p_group->check_thread()) {
+        si_tcp_logerr("Non native thread: expected=%lx current=%lx", m_p_group->m_thread, pthread_self());
+    }
+
     lock_tcp_con();
     m_b_xlio_socket_dirty = false;
     tcp_output(&m_pcb);

@@ -76,6 +76,8 @@ poll_group::poll_group(const struct xlio_poll_group_attr *attr)
     s_poll_groups.push_back(this);
     s_poll_groups_lock.unlock();
 
+    m_thread = pthread_self();
+
     grp_logdbg("Polling group %p created", this);
 }
 
@@ -117,6 +119,10 @@ void poll_group::destroy_all_groups()
 
 void poll_group::poll()
 {
+    if (!check_thread()) {
+        grp_logerr("Non native thread: expected=%lx current=%lx", m_thread, pthread_self());
+    }
+
     for (ring *rng : m_rings) {
         uint64_t sn;
         rng->poll_and_process_element_tx(&sn);
@@ -128,6 +134,10 @@ void poll_group::poll()
 
 void poll_group::add_dirty_socket(sockinfo_tcp *si)
 {
+    if (!check_thread()) {
+        grp_logerr("Non native thread: expected=%lx current=%lx", m_thread, pthread_self());
+    }
+
     if (m_group_flags & XLIO_GROUP_FLAG_DIRTY) {
         m_dirty_sockets.push_back(si);
     }
@@ -135,6 +145,10 @@ void poll_group::add_dirty_socket(sockinfo_tcp *si)
 
 void poll_group::flush()
 {
+    if (!check_thread()) {
+        grp_logerr("Non native thread: expected=%lx current=%lx", m_thread, pthread_self());
+    }
+
     for (auto si : m_dirty_sockets) {
         si->flush();
     }
@@ -144,6 +158,10 @@ void poll_group::flush()
 
 void poll_group::add_ring(ring *rng, ring_alloc_logic_attr *attr)
 {
+    if (!check_thread()) {
+        grp_logerr("Non native thread: expected=%lx current=%lx", m_thread, pthread_self());
+    }
+
     if (std::find(m_rings.begin(), m_rings.end(), rng) == std::end(m_rings)) {
         grp_logdbg("New ring %p in group %p", rng, this);
         m_rings.push_back(rng);
@@ -173,6 +191,10 @@ void poll_group::add_ring(ring *rng, ring_alloc_logic_attr *attr)
 
 void poll_group::add_socket(sockinfo_tcp *si)
 {
+    if (!check_thread()) {
+        grp_logerr("Non native thread: expected=%lx current=%lx", m_thread, pthread_self());
+    }
+
     m_sockets_list.push_back(si);
     // For the flow_tag fast path support.
     g_p_fd_collection->set_socket(si->get_fd(), si);
@@ -180,6 +202,10 @@ void poll_group::add_socket(sockinfo_tcp *si)
 
 void poll_group::close_socket(sockinfo_tcp *si, bool force /*=false*/)
 {
+    if (!check_thread()) {
+        grp_logerr("Non native thread: expected=%lx current=%lx", m_thread, pthread_self());
+    }
+
     g_p_fd_collection->clear_socket(si->get_fd());
     m_sockets_list.erase(si);
 
