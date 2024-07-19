@@ -715,7 +715,7 @@ extern mce_sys_var &safe_mce_sys();
  * This block consists of default values for library specific
  * configuration variables
  */
-#define MCE_DEFAULT_PRINT_REPORT             (false)
+#define MCE_DEFAULT_PRINT_REPORT             (true)
 #define MCE_DEFAULT_TCP_SEND_BUFFER_SIZE     (1024 * 1024)
 #define MCE_DEFAULT_LOG_FILE                 ("")
 #define MCE_DEFAULT_CONF_FILE                ("/etc/libxlio.conf")

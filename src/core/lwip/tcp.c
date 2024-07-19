@@ -912,6 +912,7 @@ void tcp_pcb_init(struct tcp_pcb *pcb, u8_t prio, void *container)
     pcb->max_snd_buff = lwip_tcp_snd_buf;
     pcb->snd_buf = pcb->max_snd_buff;
     pcb->snd_queuelen = 0;
+    pcb->snd_queuelen_max = 0;
     pcb->snd_scale = 0;
     pcb->rcv_scale = 0;
     pcb->rcv_wnd = TCP_WND_SCALED(pcb);
@@ -1014,6 +1015,7 @@ void tcp_pcb_recycle(struct tcp_pcb *pcb)
     pcb->quickack = 0;
     pcb->is_in_input = 0;
     pcb->snd_queuelen = 0;
+    pcb->snd_queuelen_max = 0;
     pcb->snd_scale = 0;
     pcb->rcv_scale = 0;
     pcb->last_unsent = NULL;

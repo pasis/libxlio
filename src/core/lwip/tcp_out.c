@@ -317,6 +317,7 @@ static err_t tcp_write_checks(struct tcp_pcb *pcb, u32_t len)
         return ERR_OK;
     }
 
+#if 0
     /* If total number of pbufs on the unsent/unacked queues exceeds the
      * configured maximum, return an error */
     if ((pcb->snd_queuelen >= pcb->max_unsent_len) ||
@@ -327,6 +328,7 @@ static err_t tcp_write_checks(struct tcp_pcb *pcb, u32_t len)
         pcb->flags |= TF_NAGLEMEMERR;
         return ERR_MEM;
     }
+#endif
     return ERR_OK;
 }
 
@@ -583,6 +585,7 @@ err_t tcp_write(struct tcp_pcb *pcb, const void *arg, u32_t len, u16_t apiflags,
 
         queuelen++; /* There is only one pbuf in the list */
 
+#if 0
         /* Now that there are more segments queued, we check again if the
          * length of the queue exceeds the configured maximum or
          * overflows. */
@@ -593,6 +596,7 @@ err_t tcp_write(struct tcp_pcb *pcb, const void *arg, u32_t len, u16_t apiflags,
             tcp_tx_pbuf_free(pcb, p);
             goto memerr;
         }
+#endif
 
         if ((seg = tcp_create_segment(pcb, p, 0, pcb->snd_lbb + pos, optflags)) == NULL) {
             tcp_tx_pbuf_free(pcb, p);
@@ -675,6 +679,9 @@ err_t tcp_write(struct tcp_pcb *pcb, const void *arg, u32_t len, u16_t apiflags,
     pcb->snd_lbb += len;
     pcb->snd_buf -= len;
     pcb->snd_queuelen = queuelen;
+    if (pcb->snd_queuelen > pcb->snd_queuelen_max) {
+        pcb->snd_queuelen_max = pcb->snd_queuelen;
+    }
 
     LWIP_DEBUGF(TCP_QLEN_DEBUG, ("tcp_write: %" S16_F " (after enqueued)\n", pcb->snd_queuelen));
     if (pcb->snd_queuelen != 0) {

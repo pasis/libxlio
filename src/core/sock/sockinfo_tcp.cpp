@@ -670,6 +670,8 @@ bool sockinfo_tcp::prepare_to_close(bool process_shutdown /* = false */)
 {
     si_tcp_logdbg("");
 
+    si_tcp_loginfo("max queuelen=%u", m_pcb.snd_queuelen_max);
+
     lock_tcp_con();
 
     bool do_abort = safe_mce_sys().tcp_abort_on_close || m_n_rx_pkt_ready_list_count;
