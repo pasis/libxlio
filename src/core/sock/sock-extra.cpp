@@ -384,6 +384,7 @@ struct xlio_api_t *extra_api()
         SET_EXTRA_API(xlio_socket_setsockopt, xlio_socket_setsockopt, XLIO_EXTRA_API_XLIO_SOCKET);
         SET_EXTRA_API(xlio_socket_bind, xlio_socket_bind, XLIO_EXTRA_API_XLIO_SOCKET);
         SET_EXTRA_API(xlio_socket_connect, xlio_socket_connect, XLIO_EXTRA_API_XLIO_SOCKET);
+        SET_EXTRA_API(xlio_socket_getsockname, xlio_socket_getsockname, XLIO_EXTRA_API_XLIO_SOCKET);
         SET_EXTRA_API(xlio_socket_get_pd, xlio_socket_get_pd, XLIO_EXTRA_API_XLIO_SOCKET);
         SET_EXTRA_API(xlio_socket_send, xlio_socket_send, XLIO_EXTRA_API_XLIO_SOCKET);
         SET_EXTRA_API(xlio_socket_sendv, xlio_socket_sendv, XLIO_EXTRA_API_XLIO_SOCKET);
@@ -554,6 +555,13 @@ extern "C" int xlio_socket_connect(xlio_socket_t sock, const struct sockaddr *to
         errno = errno_save;
     }
     return rc;
+}
+
+extern "C" int xlio_socket_getsockname(xlio_socket_t sock, struct sockaddr *addr,
+                                       socklen_t *addrlen)
+{
+    sockinfo_tcp *si = reinterpret_cast<sockinfo_tcp *>(sock);
+    return si->getsockname(addr, addrlen);
 }
 
 extern "C" struct ibv_pd *xlio_socket_get_pd(xlio_socket_t sock)

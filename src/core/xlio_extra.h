@@ -333,6 +333,7 @@ struct __attribute__((packed)) xlio_api_t {
                                   socklen_t optlen);
     int (*xlio_socket_bind)(xlio_socket_t sock, const struct sockaddr *addr, socklen_t addrlen);
     int (*xlio_socket_connect)(xlio_socket_t sock, const struct sockaddr *to, socklen_t tolen);
+    int (*xlio_socket_getsockname)(xlio_socket_t sock, struct sockaddr *addr, socklen_t *addrlen);
     struct ibv_pd *(*xlio_socket_get_pd)(xlio_socket_t sock);
     int (*xlio_socket_send)(xlio_socket_t sock, const void *data, size_t len,
                             const struct xlio_socket_send_attr *attr);

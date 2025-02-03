@@ -453,6 +453,7 @@ int xlio_socket_setsockopt(xlio_socket_t sock, int level, int optname, const voi
                            socklen_t optlen);
 int xlio_socket_bind(xlio_socket_t sock, const struct sockaddr *addr, socklen_t addrlen);
 int xlio_socket_connect(xlio_socket_t sock, const struct sockaddr *to, socklen_t tolen);
+int xlio_socket_getsockname(xlio_socket_t sock, struct sockaddr *addr, socklen_t *addrlen);
 struct ibv_pd *xlio_socket_get_pd(xlio_socket_t sock);
 
 /*
