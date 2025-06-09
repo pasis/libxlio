@@ -423,6 +423,8 @@ int xlio_socket_create(const struct xlio_socket_attr *attr, xlio_socket_t *sock_
 int xlio_socket_destroy(xlio_socket_t sock);
 int xlio_socket_setsockopt(xlio_socket_t sock, int level, int optname, const void *optval,
                            socklen_t optlen);
+int xlio_socket_info(xlio_socket_t sock, struct xlio_socket_info_t *info);
+
 int xlio_socket_bind(xlio_socket_t sock, const struct sockaddr *addr, socklen_t addrlen);
 int xlio_socket_connect(xlio_socket_t sock, const struct sockaddr *to, socklen_t tolen);
 struct ibv_pd *xlio_socket_get_pd(xlio_socket_t sock);

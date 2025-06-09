@@ -135,6 +135,8 @@ void L3_level_tcp_input(struct pbuf *p, struct tcp_pcb *pcb)
         return;
     }
 
+    pcb->ts_last_pkt = getts64();
+
     in_data.tcphdr = (struct tcp_hdr *)p->payload;
     tcp_debug_print(in_data.tcphdr);
 
@@ -221,6 +223,7 @@ void L3_level_tcp_input(struct pbuf *p, struct tcp_pcb *pcb)
                             in_data.recv_data->flags |= PBUF_FLAG_PUSH;
                         }
                         /* Notify application that data has been received. */
+                        pcb->ts_last_data = getts64();
                         TCP_EVENT_RECV(pcb, in_data.recv_data, ERR_OK, err);
                         if (err == ERR_ABRT) {
                             goto aborted;
@@ -1185,6 +1188,7 @@ static void tcp_receive(struct tcp_pcb *pcb, tcp_in_data *in_data)
             /* Out of sequence ACK, didn't really ack anything */
             pcb->acked = 0;
             tcp_send_empty_ack(pcb);
+            pcb->ts_last_ooo_ack = getts64();
         }
 
         /* We go through the ->unsent list to see if any of the segments
@@ -1243,6 +1247,7 @@ static void tcp_receive(struct tcp_pcb *pcb, tcp_in_data *in_data)
        (RFC 793, chapter 3.9, "SEGMENT ARRIVES" in states CLOSE-WAIT, CLOSING,
        LAST-ACK and TIME-WAIT: "Ignore the segment text.") */
     if ((in_data->tcplen > 0) && (get_tcp_state(pcb) < CLOSE_WAIT)) {
+        pcb->ts_last_pkt_len = getts64();
         /* This code basically does three things:
 
         +) If the incoming segment contains data that is the next
@@ -1495,6 +1500,7 @@ static void tcp_receive(struct tcp_pcb *pcb, tcp_in_data *in_data)
             } else {
                 /* We get here if the incoming segment is out-of-sequence. */
                 tcp_send_empty_ack(pcb);
+                pcb->ts_last_ooo = getts64();
 #if TCP_QUEUE_OOSEQ
                 /* Suppress coverity warning of uninit array during tcp_seg_copy(). */
                 memset(in_data->inseg.l2_l3_tcphdr_zc, 0, sizeof(in_data->inseg.l2_l3_tcphdr_zc));

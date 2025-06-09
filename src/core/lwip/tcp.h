@@ -411,6 +411,12 @@ struct tcp_pcb {
         /* Maximum number of SGE */
         u32_t max_send_sge;
     } tso;
+
+    uint64_t ts_last_data;
+    uint64_t ts_last_pkt;
+    uint64_t ts_last_pkt_len;
+    uint64_t ts_last_ooo;
+    uint64_t ts_last_ooo_ack;
 };
 
 typedef u16_t (*ip_route_mtu_fn)(struct tcp_pcb *pcb);
@@ -483,6 +489,15 @@ s32_t tcp_is_wnd_available(struct tcp_pcb *pcb, u32_t data_len);
     external_tcp_state_observer((pcb)->my_container, (pcb)->private_state = state)
 
 void tcp_set_keepalive(struct tcp_pcb *pcb, u32_t idle, u32_t intvl, u32_t cnt);
+
+#include <time.h>
+static inline uint64_t getts64()
+{
+    struct timespec ts;
+
+    int rc = clock_gettime(CLOCK_MONOTONIC, &ts);
+    return rc == 0 ? ts.tv_sec * 1000000000ULL + ts.tv_nsec : 0;
+}
 
 #ifdef __cplusplus
 }

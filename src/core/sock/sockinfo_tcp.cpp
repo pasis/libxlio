@@ -374,6 +374,26 @@ void sockinfo_tcp::rx_add_ring_cb(ring *p_ring)
     sockinfo::rx_add_ring_cb(p_ring);
 }
 
+
+int sockinfo_tcp::xlio_socket_info(struct xlio_socket_info_t *info)
+{
+    info->state = get_tcp_state(&m_pcb);
+    info->ts_current = getts64();
+    info->ts_last_data = m_pcb.ts_last_data;
+    info->ts_last_pkt = m_pcb.ts_last_pkt;
+    info->ts_last_pkt_len = m_pcb.ts_last_pkt_len;
+    info->ts_last_ooo = m_pcb.ts_last_ooo;
+    info->ts_last_ooo_ack = m_pcb.ts_last_ooo_ack;
+
+    uint64_t len = 0;
+    for (struct tcp_seg *seg = m_pcb.ooseq; seg; seg = seg->next) {
+        len += seg->len;
+    }
+    info->size_ooo = len;
+
+    return 0;
+}
+
 void sockinfo_tcp::set_xlio_socket(const struct xlio_socket_attr *attr)
 {
     if (m_rx_epfd != -1) {

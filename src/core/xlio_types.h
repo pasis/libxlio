@@ -435,4 +435,15 @@ struct xlio_socket_send_attr {
     uintptr_t userdata_op;
 };
 
+struct xlio_socket_info_t {
+    int state;
+    uint64_t ts_current;
+    uint64_t ts_last_data;
+    uint64_t ts_last_pkt;
+    uint64_t ts_last_pkt_len;
+    uint64_t ts_last_ooo;
+    uint64_t ts_last_ooo_ack;
+    uint64_t size_ooo;
+};
+
 #endif /* XLIO_TYPES_H */
