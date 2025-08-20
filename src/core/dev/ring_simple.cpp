@@ -17,7 +17,7 @@
 #define MODULE_HDR MODULE_NAME "%d:%s() "
 
 #define ALIGN_WR_DOWN(_num_wr_) (std::max(32, ((_num_wr_) & ~(0xf))))
-#define RING_TX_BUFS_COMPENSATE 256U
+#define RING_TX_BUFS_COMPENSATE 1024U
 
 #define RING_LOCK_AND_RUN(__lock__, __func_and_params__)                                           \
     __lock__.lock();                                                                               \
@@ -866,6 +866,7 @@ void ring_simple::return_tx_pool_to_global_pool()
     return_to_global_pool();
 }
 
+// Returns number of freed buffers.
 int ring_simple::put_tx_buffer_helper(mem_buf_desc_t *buff)
 {
     if (buff->tx.dev_mem_length) {
@@ -885,7 +886,6 @@ int ring_simple::put_tx_buffer_helper(mem_buf_desc_t *buff)
         buff->p_next_desc = nullptr;
         free_lwip_pbuf(&buff->lwip_pbuf);
         pool.push_back(buff);
-        // Return number of freed buffers
         return 1;
     }
     return 0;
