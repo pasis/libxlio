@@ -474,20 +474,17 @@ inline void hw_queue_tx::ring_doorbell(uint8_t num_wqebb, bool skip_comp /*=fals
 
     m_sq_wqe_counter = (m_sq_wqe_counter + num_wqebb) & 0xFFFF;
 
-    // Make sure that descriptors are written before
-    // updating doorbell record and ringing the doorbell
-    wmb();
+    /* The barriers follow mlx5e_notify_hw() of the Linux kernel. The doorbell is written to a
+     * non-cached UAR page, so no write-combining flush is needed after it.
+     */
+
+    // Make sure that descriptors are written before updating doorbell record.
+    dma_wmb();
     *m_mlx5_qp.sq.dbrec = htonl(m_sq_wqe_counter);
 
-    // This wc_wmb ensures ordering between DB record and BF copy
-    wc_wmb();
+    // Make sure that doorbell record is written before ringing the doorbell.
+    wmb();
     *dst = *src;
-
-    /* Use wc_wmb() to ensure write combining buffers are flushed out
-     * of the running CPU.
-     * sfence instruction affects only the WC buffers of the CPU that executes it
-     */
-    wc_wmb();
 }
 
 inline int hw_queue_tx::fill_inl_segment(sg_array &sga, uint8_t *cur_seg, uint8_t *data_addr,

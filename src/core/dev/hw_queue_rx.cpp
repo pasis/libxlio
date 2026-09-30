@@ -373,7 +373,7 @@ out:
     if (likely(nreq)) {
         m_rq_data.head += nreq;
 
-        wmb(); // Make sure that descriptors are written before doorbell record.
+        dma_wmb(); // Make sure that descriptors are written before doorbell record.
 
         // Buffers are posted only after the RQ is in ready state. OK to update doorbell.
         *m_rq_data.dbrec = htonl(m_rq_data.head & 0xffff);

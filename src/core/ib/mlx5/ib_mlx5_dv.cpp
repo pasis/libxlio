@@ -39,14 +39,13 @@ int xlio_ib_mlx5_req_notify_cq(xlio_ib_mlx5_cq_t *mlx5_cq, int solicited)
     mlx5_cq->dbrec[XLIO_IB_MLX5_CQ_ARM_DB] = htonl(sn << 28 | cmd | ci);
 
     /*
-     * Make sure that the doorbell record in host memory is
-     * written before ringing the doorbell via PCI WC MMIO.
+     * Make sure that the doorbell record in host memory is written before ringing the
+     * doorbell via PCI MMIO. The same as mlx5_cq_arm() of the Linux kernel. The UAR page is
+     * non-cached, so no write-combining flush is needed after the doorbell.
      */
     wmb();
 
     *(uint64_t *)((uint8_t *)mlx5_cq->uar + MLX5_CQ_DOORBELL) = htonll(doorbell);
-
-    wc_wmb();
 
     return 0;
 }

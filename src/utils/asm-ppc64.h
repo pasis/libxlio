@@ -20,10 +20,11 @@
     *dst++ = *src++;                                                                               \
     *dst++ = *src++
 
-#define mb()     asm volatile("sync" ::: "memory")
-#define rmb()    asm volatile("lwsync" ::: "memory")
-#define wmb()    rmb()
-#define wc_wmb() mb()
+/* Read barriers don't follow the Linux naming, see asm.h. */
+#define mb()      asm volatile("sync" ::: "memory")
+#define rmb()     asm volatile("lwsync" ::: "memory")
+#define wmb()     asm volatile("sync" ::: "memory")
+#define dma_wmb() asm volatile("lwsync" ::: "memory")
 
 /**
  * Add to the atomic variable.

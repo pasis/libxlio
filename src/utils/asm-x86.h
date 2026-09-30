@@ -13,10 +13,11 @@
 
 #define __xg(x) ((volatile long *)(x))
 
-#define mb()     asm volatile("" ::: "memory")
-#define rmb()    mb()
-#define wmb()    asm volatile("" ::: "memory")
-#define wc_wmb() asm volatile("sfence" ::: "memory")
+/* Read barriers don't follow the Linux naming, see asm.h. */
+#define mb()      asm volatile("" ::: "memory")
+#define rmb()     mb()
+#define wmb()     asm volatile("sfence" ::: "memory")
+#define dma_wmb() asm volatile("" ::: "memory")
 
 #define COPY_64B_NT(dst, src)                                                                      \
     __asm__ __volatile__(" movdqa   (%1),%%xmm0\n"                                                 \
