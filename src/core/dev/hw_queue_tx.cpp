@@ -57,27 +57,6 @@ static inline uint64_t align_to_WQEBB_up(uint64_t val)
     return ((val + 4 - 1) >> 2) << 2;
 }
 
-static bool is_bf(struct ibv_context *ib_ctx)
-{
-    char *env;
-
-    /* This limitation is done for RM: 1557652, 1894523, 1914464, 2069198 */
-    if (safe_mce_sys().hypervisor != mce_sys_var::HYPER_NONE) {
-        return false;
-    }
-
-    env = getenv("MLX5_SHUT_UP_BF");
-    if (!env || !strcmp(env, "0")) {
-        struct mlx5dv_devx_uar *uar = mlx5dv_devx_alloc_uar(ib_ctx, MLX5DV_UAR_ALLOC_TYPE_BF);
-        if (uar) {
-            mlx5dv_devx_free_uar(uar);
-            return true;
-        }
-    }
-
-    return false;
-}
-
 // Maps xlio_ibv_wr_opcode to real MLX5 opcode.
 static inline uint32_t get_mlx5_opcode(xlio_ibv_wr_opcode verbs_opcode)
 {
@@ -447,18 +426,14 @@ void hw_queue_tx::init_queue()
                   get_max_inline_data(), m_sq_wqe_idx_to_prop);
 
     hwqtx_logfunc("%p allocated for %d QPs sq_wqes:%p sq_wqes_end: %p and configured %d WRs "
-                  "BlueFlame: %p",
+                  "doorbell: %p",
                   m_mlx5_qp.qp, m_mlx5_qp.qpn, m_sq_wqes, m_sq_wqes_end, m_tx_num_wr,
                   m_mlx5_qp.bf.reg);
 }
 
 void hw_queue_tx::init_device_memory()
 {
-    /* This limitation is done because of a observation
-     * that dm_copy takes a lot of time on VMs w/o BF (RM:1542628)
-     */
-    if (m_p_ib_ctx_handler->get_on_device_memory_size() > 0 &&
-        is_bf(m_p_ib_ctx_handler->get_ibv_context())) {
+    if (m_p_ib_ctx_handler->get_on_device_memory_size() > 0) {
         m_dm_enabled =
             m_dm_mgr.allocate_resources(m_p_ib_ctx_handler, m_p_ring->m_p_ring_stat.get());
     }

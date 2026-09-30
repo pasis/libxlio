@@ -1940,6 +1940,13 @@ void set_env_params()
     setenv("MLX5_DEVICE_FATAL_CLEANUP", "1", 1);
     setenv("RDMAV_ALLOW_DISASSOC_DESTROY", "1", 1);
 
+    /*
+     * XLIO doorbells rely on non-cached (NC) UAR pages. Without this, rdma-core
+     * maps write-combining (BlueFlame) UARs for SQs.
+     * Must be set before the first ibv_open_device().
+     */
+    setenv("MLX5_SHUT_UP_BF", "1", 1);
+
     const char *ibv_alloc_type = "PREFER_CONTIG";
 
     switch (safe_mce_sys().mem_alloc_type) {

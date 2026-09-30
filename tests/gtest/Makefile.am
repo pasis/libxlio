@@ -125,6 +125,7 @@ gtest_SOURCES = \
 	core/sigaction.cc \
 	core/xlio_base.cc \
 	core/xlio_sockopt.cc \
+	core/xlio_rdma_env.cc \
 	core/blocking_wait_test.cc \
 	core/blocking_wait_results_test.cc \
 	\
