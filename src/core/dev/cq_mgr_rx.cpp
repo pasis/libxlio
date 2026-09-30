@@ -173,6 +173,10 @@ void cq_mgr_rx::add_hqrx(hw_queue_rx *hqrx_ptr)
     if (0 != xlio_ib_mlx5_get_cq(m_p_ibv_cq, &m_mlx5_cq)) {
         cq_logpanic("xlio_ib_mlx5_get_cq failed (errno=%d %m)", errno);
     }
+    if (!xlio_ib_mlx5_is_nc_uar(m_p_ib_ctx_handler->get_ibv_context(), m_mlx5_cq.uar)) {
+        cq_logerr("CQ doorbell UAR %p is not a non-cached (NC) page, CQ arming may be delayed",
+                  m_mlx5_cq.uar);
+    }
 
     VALGRIND_MAKE_MEM_DEFINED(&m_mlx5_cq, sizeof(m_mlx5_cq));
     cq_logfunc("hqrx_ptr=%p m_mlx5_cq.dbrec=%p m_mlx5_cq.cq_buf=%p", hqrx_ptr, m_mlx5_cq.dbrec,

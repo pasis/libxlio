@@ -383,6 +383,10 @@ void hw_queue_tx::init_queue()
     if (0 != xlio_ib_mlx5_get_qp_tx(&m_mlx5_qp)) {
         hwqtx_logpanic("xlio_ib_mlx5_get_qp_tx failed (errno=%d %m)", errno);
     }
+    if (!xlio_ib_mlx5_is_nc_uar(m_p_ib_ctx_handler->get_ibv_context(), m_mlx5_qp.bf.reg)) {
+        hwqtx_logerr("SQ doorbell UAR %p is not a non-cached (NC) page, TX may be delayed",
+                     m_mlx5_qp.bf.reg);
+    }
 
     m_sq_wqes = (struct mlx5_eth_wqe(*)[])(uintptr_t)m_mlx5_qp.sq.buf;
     m_sq_wqe_hot = &(*m_sq_wqes)[0];

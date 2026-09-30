@@ -56,4 +56,26 @@ void xlio_ib_mlx5_get_cq_event(xlio_ib_mlx5_cq_t *mlx5_cq, int count)
     mlx5_cq->cq_sn += count;
 }
 
+bool xlio_ib_mlx5_is_nc_uar(struct ibv_context *context, const void *uar_addr)
+{
+    /*
+     * A UAR page is mapped with system page granularity. With 64KB pages, it holds 16 device
+     * UARs of 4KB, all mapped with the same attributes.
+     */
+    static const uintptr_t uar_map_size = (uintptr_t)sysconf(_SC_PAGESIZE);
+
+    /*
+     * rdma-core returns the context singleton NC UAR here without allocating a new one.
+     * The same page backs CQs and, with MLX5_SHUT_UP_BF=1, SQs.
+     */
+    struct mlx5dv_devx_uar *nc = mlx5dv_devx_alloc_uar(context, MLX5DV_UAR_ALLOC_TYPE_NC);
+    if (!nc) {
+        return false;
+    }
+    bool is_nc = (uintptr_t)uar_addr - (uintptr_t)nc->base_addr < uar_map_size;
+    mlx5dv_devx_free_uar(nc);
+
+    return is_nc;
+}
+
 #endif /* (DEFINED_DIRECT_VERBS == 3) */

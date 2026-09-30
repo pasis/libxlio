@@ -449,6 +449,9 @@ int xlio_ib_mlx5_get_cq(struct ibv_cq *cq, xlio_ib_mlx5_cq_t *mlx5_cq);
 int xlio_ib_mlx5_req_notify_cq(xlio_ib_mlx5_cq_t *mlx5_cq, int solicited);
 void xlio_ib_mlx5_get_cq_event(xlio_ib_mlx5_cq_t *mlx5_cq, int count);
 
+/* Returns true if the address belongs to the non-cached (NC) UAR page of the context. */
+bool xlio_ib_mlx5_is_nc_uar(struct ibv_context *context, const void *uar_addr);
+
 #endif /* DEFINED_DIRECT_VERBS */
 
 #endif /* _IB_MLX5_H_ */
