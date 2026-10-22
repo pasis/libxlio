@@ -248,6 +248,15 @@ public:
 
     inline void sndbuf_reserve(uint32_t bytes) { m_snd_buf -= static_cast<int32_t>(bytes); }
 
+    // Credit consumption by writers that hold m_tcp_con_lock. The lock orders them against
+    // each other and against ack_recvd_lwip_cb(), so the RMW needs no acquire-release. On
+    // aarch64 a release would wait for the preceding doorbell write to a non-cached UAR page
+    // to be acknowledged by the device, which stalls the TX path for a PCIe round trip.
+    inline void sndbuf_consume(uint32_t bytes)
+    {
+        m_snd_buf.fetch_sub(static_cast<int32_t>(bytes), std::memory_order_relaxed);
+    }
+
     inline unsigned get_mss() { return m_pcb.mss; }
 
     ssize_t tx(xlio_tx_call_attr_t &tx_arg) override;

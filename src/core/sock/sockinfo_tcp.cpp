@@ -1357,7 +1357,7 @@ ssize_t sockinfo_tcp::tcp_tx(xlio_tx_call_attr_t &tx_arg)
             tx_ptr = (void *)((char *)tx_ptr + tx_size);
             pos += tx_size;
             total_tx += tx_size;
-            m_snd_buf -= tx_size;
+            sndbuf_consume(tx_size);
         }
     }
 
@@ -1773,7 +1773,7 @@ ssize_t sockinfo_tcp::tcp_tx_slow_path(xlio_tx_call_attr_t &tx_arg)
             }
             pos += tx_size;
             total_tx += tx_size;
-            m_snd_buf -= tx_size;
+            sndbuf_consume(tx_size);
         }
     }
 
@@ -6589,7 +6589,7 @@ int sockinfo_tcp::tcp_tx_express(const struct iovec *iov, unsigned iov_len, uint
     }
 
     if (flags & XLIO_EXPRESS_MSG_SND_BUF) {
-        m_snd_buf -= bytes_written;
+        sndbuf_consume(bytes_written);
     }
 
     if (!(flags & XLIO_EXPRESS_MSG_MORE)) {
